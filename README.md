@@ -90,6 +90,13 @@ This method automatically deploys your application whenever you push to GitHub.
    - **Environment**: Production (and optionally Preview)
    - **Type**: Encrypt (select the lock icon)
    - Click **Save**
+   
+   **Optional:** You can also configure the Account ID as an environment variable:
+   - **Variable name**: `CLOUDFLARE_ACCOUNT_ID`
+   - **Value**: Your Cloudflare Account ID (32-character hex string)
+   - **Environment**: Production (and optionally Preview)
+   - Click **Save**
+   - When configured, users won't need to enter the Account ID manually
 
 5. **Redeploy:**
    - Go to **Deployments** tab
@@ -123,6 +130,12 @@ This method automatically deploys your application whenever you push to GitHub.
    bunx wrangler pages secret put CLOUDFLARE_API_TOKEN --project-name overcast
    ```
    When prompted, paste your Cloudflare API Token.
+   
+   **Optional:** Configure the Account ID as a secret:
+   ```bash
+   bunx wrangler pages secret put CLOUDFLARE_ACCOUNT_ID --project-name overcast
+   ```
+   When prompted, paste your Cloudflare Account ID. This allows users to skip entering it manually.
 
 5. **Deploy to Cloudflare Pages:**
    ```bash
@@ -157,6 +170,13 @@ This method automatically deploys your application whenever you push to GitHub.
      - **Value**: Your Cloudflare API Token
      - **Type**: Secret (encrypted)
    - Click **Save**
+   
+   **Optional:** Add Account ID as an environment variable:
+   - **Variable name**: `CLOUDFLARE_ACCOUNT_ID`
+   - **Value**: Your Cloudflare Account ID
+   - **Type**: Secret (encrypted)
+   - Click **Save**
+   - When configured, users won't need to enter it manually
 
 4. **Redeploy:**
    - Go to **Deployments** and click **Retry deployment** for the latest deployment
@@ -191,9 +211,10 @@ Deployment typically takes 1-2 minutes. You'll get a unique URL for each deploym
 
 1. **Access your application** at your Overcast URL (e.g., `https://overcast.pages.dev`)
 
-2. **Enter your Cloudflare Account ID**
+2. **Enter your Cloudflare Account ID** (if not configured server-side)
    - Find this in your Cloudflare dashboard under Account Settings
    - Or in the URL when viewing your account: `dash.cloudflare.com/<ACCOUNT_ID>`
+   - If the Account ID is configured as an environment variable, this field will be pre-filled and disabled
 
 3. **Load your zones**
    - Click "Load Zones" to fetch all zones in your account
@@ -267,6 +288,7 @@ To run this locally for development:
    Create a `.dev.vars` file in the root directory:
    ```
    CLOUDFLARE_API_TOKEN=your_token_here
+   CLOUDFLARE_ACCOUNT_ID=your_account_id_here  # Optional
    ```
 
 3. **Run the development server:**
@@ -290,12 +312,37 @@ The development server will automatically reload when you make changes to your f
 - All communication is over HTTPS
 - The API validates all inputs before making API calls
 
+## Environment Variables
+
+This application uses the following environment variables:
+
+### Required
+- **`CLOUDFLARE_API_TOKEN`**: Your Cloudflare API token with zone and zone settings permissions
+  - Type: Secret (encrypted)
+  - Required for all API operations
+  - Never exposed to the frontend
+
+### Optional
+- **`CLOUDFLARE_ACCOUNT_ID`**: Your Cloudflare Account ID (32-character hex string)
+  - Type: Secret (encrypted)
+  - When configured: Users are automatically authenticated and don't need to enter Account ID
+  - When not configured: Users must enter their Account ID in the UI
+  - Useful for single-tenant deployments or internal tools
+
+To set these in production:
+1. Go to your Pages project → **Settings** → **Environment variables**
+2. Click **Add variable** for each one
+3. Select **Encrypt** for sensitive values
+
+For local development, create a `.dev.vars` file (see Development section above).
+
 ## Project Structure
 
 ```
 overcast/
 ├── functions/              # Cloudflare Pages Functions (API backend)
 │   └── api/
+│       ├── config.js       # GET /api/config - Check server configuration
 │       ├── zones.js        # GET /api/zones - List zones with settings
 │       └── zones/
 │           └── settings.js # PATCH /api/zones/settings - Update settings
