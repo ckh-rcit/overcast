@@ -6,11 +6,9 @@ pages_build_output_dir = "."
 # Static files (HTML, CSS, JS) are served from root
 # API routes are handled by Pages Functions in /functions directory
 
-[env.production]
-name = "overcast-production"
-
-[env.staging]
-name = "overcast-staging"
+# Pages supports two environments: production and preview
+# production = main branch
+# preview = all other branches (pull requests, etc.)
 
 # Note: The actual API token should be set as a secret via the dashboard or CLI:
 #   wrangler pages secret put CLOUDFLARE_API_TOKEN --project-name overcast
