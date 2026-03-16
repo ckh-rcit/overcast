@@ -461,3 +461,25 @@ input[type="checkbox"] {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--cf-border);
 }
+
+/* Dirty state indicators */
+.setting-input.dirty {
+    border-color: var(--cf-yellow);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.toggle-switch input.dirty + .toggle-slider {
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+}
+
+.settings-category.has-changes {
+    border-left: 3px solid var(--cf-yellow);
+    padding-left: 29px;
+}
+
+.settings-category.has-changes h3::before {
+    content: "• ";
+    color: var(--cf-yellow);
+    font-weight: bold;
+    margin-right: 4px;
+}

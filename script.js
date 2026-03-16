@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const applySettingsBtn = document.getElementById('apply-settings-btn');
     const selectAllZonesCheckbox = document.getElementById('select-all-zones');
     const selectedCountEl = document.getElementById('selected-count');
+    const zonesCountEl = document.getElementById('zones-count');
     const loadingIndicator = document.getElementById('loading-indicator');
     const errorAlert = document.getElementById('error-alert');
     const successAlert = document.getElementById('success-alert');
@@ -23,14 +24,43 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalPages = 1;
     let selectedZones = new Set();
     const apiBaseUrl = '/api';
+    let configuredAccountId = null;
 
-    // Initialize settings form controls
+    // Initialize
+    checkServerConfig();
     initializeSettingsControls();
+    attachDirtyStateTracking();
 
     // Event listeners
     loadZonesBtn.addEventListener('click', loadZones);
     selectAllZonesCheckbox.addEventListener('change', toggleAllZones);
     applySettingsBtn.addEventListener('click', applySettingsToSelectedZones);
+
+    // Check if account ID is configured on server
+    async function checkServerConfig() {
+        try {
+            const response = await fetch(`${apiBaseUrl}/config`);
+            if (response.ok) {
+                const config = await response.json();
+                if (config.hasAccountId && config.accountId) {
+                    configuredAccountId = config.accountId;
+                    accountIdInput.value = configuredAccountId;
+                    accountIdInput.disabled = true;
+                    accountIdInput.placeholder = 'Configured via environment variable';
+                    
+                    // Add helpful note
+                    const note = document.createElement('small');
+                    note.className = 'text-secondary';
+                    note.style.display = 'block';
+                    note.style.marginTop = '4px';
+                    note.textContent = '✓ Account ID configured server-side';
+                    accountIdInput.parentElement.appendChild(note);
+                }
+            }
+        } catch (error) {
+            console.log('Could not check server config:', error);
+        }
+    }
 
     // Functions
     function initializeSettingsControls() {
@@ -81,6 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function validateAccountId() {
+        // If account ID is configured server-side, skip validation
+        if (configuredAccountId) {
+            return true;
+        }
+        
         const accountId = accountIdInput.value.trim();
         if (!accountId) {
             showError('Please enter your Cloudflare Account ID');
@@ -109,8 +144,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchZones() {
         try {
-            const accountId = accountIdInput.value.trim();
-            const response = await fetch(`${apiBaseUrl}/zones?account_id=${encodeURIComponent(accountId)}&page=${currentPage}&per_page=${zonesPerPage}`);
+            const accountId = configuredAccountId || accountIdInput.value.trim();
+            
+            // Build URL - only include account_id param if not configured server-side
+            let url = `${apiBaseUrl}/zones?page=${currentPage}&per_page=${zonesPerPage}`;
+            if (!configuredAccountId && accountId) {
+                url += `&account_id=${encodeURIComponent(accountId)}`;
+            }
+            
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -127,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             renderZones();
             renderPagination();
+            updateZonesCount(data.total_count);
             
             zonesSection.style.display = 'block';
             settingsSection.style.display = selectedZones.size > 0 ? 'block' : 'none';
@@ -265,6 +308,85 @@ document.addEventListener('DOMContentLoaded', () => {
         applySettingsBtn.disabled = selectedZones.size === 0;
     }
 
+    function updateZonesCount(totalCount) {
+        if (!zonesCountEl || !totalCount) return;
+        
+        const startIndex = (currentPage - 1) * zonesPerPage + 1;
+        const endIndex = Math.min(currentPage * zonesPerPage, totalCount);
+        
+        zonesCountEl.textContent = `Showing ${startIndex}-${endIndex} of ${totalCount} zones`;
+    }
+
+    function attachDirtyStateTracking() {
+        // Track changes to all setting inputs
+        document.querySelectorAll('.setting-input').forEach(input => {
+            input.addEventListener('change', () => {
+                updateDirtyState(input);
+            });
+        });
+    }
+
+    function updateDirtyState(input) {
+        const settingId = input.id.replace('setting-', '');
+        const settingConfig = getSettingById(settingId);
+        
+        if (!settingConfig) return;
+        
+        let isDirty = false;
+        
+        if (input.type === 'checkbox') {
+            // For checkboxes, consider them dirty if checked
+            isDirty = input.checked;
+        } else if (input.tagName === 'SELECT') {
+            // For selects, consider them dirty if not empty
+            isDirty = input.value !== '';
+        }
+        
+        // Add/remove dirty class
+        if (isDirty) {
+            input.classList.add('dirty');
+        } else {
+            input.classList.remove('dirty');
+        }
+        
+        // Update category indicator
+        updateCategoryDirtyState(settingConfig.category);
+    }
+
+    function updateCategoryDirtyState(category) {
+        // Find all settings in this category
+        const categorySettings = ZONE_SETTINGS.filter(s => s.category === category);
+        const hasChanges = categorySettings.some(setting => {
+            const input = document.getElementById(`setting-${setting.id}`);
+            return input && input.classList.contains('dirty');
+        });
+        
+        // Find the category element and update its state
+        const categoryElements = document.querySelectorAll('.settings-category');
+        categoryElements.forEach(el => {
+            const heading = el.querySelector('h3');
+            if (heading && heading.textContent.includes(getCategoryLabel(category))) {
+                if (hasChanges) {
+                    el.classList.add('has-changes');
+                } else {
+                    el.classList.remove('has-changes');
+                }
+            }
+        });
+    }
+
+    function getCategoryLabel(category) {
+        const categoryMap = {
+            'cache': 'Cache Settings',
+            'ssl': 'SSL/TLS Settings',
+            'security': 'Security Settings',
+            'network': 'Network Settings',
+            'speed': 'Speed & Optimization',
+            'scrape_shield': 'Scrape Shield'
+        };
+        return categoryMap[category] || category;
+    }
+
     async function applySettingsToSelectedZones() {
         if (selectedZones.size === 0) {
             showError('Please select at least one zone');
@@ -374,12 +496,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset all select dropdowns to "No Change"
         document.querySelectorAll('.setting-input[type="checkbox"]').forEach(input => {
             input.checked = false;
+            input.classList.remove('dirty');
         });
         
         document.querySelectorAll('.setting-input').forEach(input => {
             if (input.tagName === 'SELECT') {
                 input.value = '';
+                input.classList.remove('dirty');
             }
+        });
+        
+        // Clear all category dirty states
+        document.querySelectorAll('.settings-category').forEach(el => {
+            el.classList.remove('has-changes');
         });
     }
 });
