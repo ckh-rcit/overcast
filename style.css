@@ -302,7 +302,7 @@ input[type="checkbox"] {
 .pagination-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 16px;
     margin-top: 20px;
     padding: 16px;
@@ -329,6 +329,51 @@ input[type="checkbox"] {
 .pagination-controls select {
     padding: 6px 10px;
     min-width: 70px;
+}
+
+/* New pagination-specific classes */
+.pagination-btn {
+    min-width: 100px;
+    padding: 8px 16px;
+}
+
+.page-info {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    min-width: 150px;
+    text-align: center;
+}
+
+.pagination-divider {
+    width: 1px;
+    height: 32px;
+    background-color: var(--border);
+    margin: 0 8px;
+}
+
+.per-page-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.per-page-container label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.per-page-select {
+    padding: 6px 10px;
+    min-width: 70px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
 }
 
 /* Settings Categories */

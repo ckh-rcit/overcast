@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const successAlert = document.getElementById('success-alert');
 
     // State
-    let zones = [];
+    let allZones = []; // Store ALL zones
+    let zones = []; // Current page of zones to display
     let currentPage = 1;
     let zonesPerPage = 20;
     let totalPages = 1;
@@ -87,12 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSelectedCount();
 
         showLoading();
-        fetchZones();
+        fetchAllZones();
     }
 
-    async function fetchZones() {
+    async function fetchAllZones() {
         try {
-            const url = `${apiBaseUrl}/zones?page=${currentPage}&per_page=${zonesPerPage}`;
+            // Fetch all zones by requesting a large per_page value
+            // Cloudflare API typically supports up to 1000 zones per request
+            const url = `${apiBaseUrl}/zones?page=1&per_page=1000`;
             const response = await fetch(url);
 
             if (!response.ok) {
@@ -105,12 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
 
-            zones = data.zones || [];
-            totalPages = data.total_pages || 1;
+            // Store ALL zones
+            allZones = data.zones || [];
             
-            renderZones();
-            renderPagination();
-            updateZonesCount(data.total_count);
+            // Calculate pagination based on client-side zonesPerPage
+            updatePagination();
+            
+            // Display first page
+            displayCurrentPage();
             
             zonesSection.style.display = 'block';
             settingsSection.style.display = selectedZones.size > 0 ? 'block' : 'none';
@@ -121,6 +126,28 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             hideLoading();
         }
+    }
+
+    function updatePagination() {
+        // Calculate total pages based on all zones and current zonesPerPage
+        totalPages = Math.ceil(allZones.length / zonesPerPage);
+        if (totalPages === 0) totalPages = 1;
+        
+        // Ensure current page is valid
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+    }
+
+    function displayCurrentPage() {
+        // Get the slice of zones for current page
+        const startIndex = (currentPage - 1) * zonesPerPage;
+        const endIndex = startIndex + zonesPerPage;
+        zones = allZones.slice(startIndex, endIndex);
+        
+        renderZones();
+        renderPagination();
+        updateZonesCount();
     }
 
     function renderZones() {
@@ -187,47 +214,53 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderPagination() {
         paginationControls.innerHTML = '';
         
-        // Always show pagination controls (even for single page) to show per-page selector
-        
         // Previous button
         const prevButton = document.createElement('button');
         prevButton.textContent = '← Previous';
+        prevButton.className = 'pagination-btn';
         prevButton.disabled = currentPage === 1;
         prevButton.addEventListener('click', () => {
             if (currentPage > 1) {
                 currentPage--;
-                showLoading();
-                fetchZones();
+                displayCurrentPage();
             }
         });
         paginationControls.appendChild(prevButton);
         
         // Page info
         const pageInfo = document.createElement('span');
+        pageInfo.className = 'page-info';
         pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
         paginationControls.appendChild(pageInfo);
         
         // Next button
         const nextButton = document.createElement('button');
         nextButton.textContent = 'Next →';
+        nextButton.className = 'pagination-btn';
         nextButton.disabled = currentPage >= totalPages;
         nextButton.addEventListener('click', () => {
             if (currentPage < totalPages) {
                 currentPage++;
-                showLoading();
-                fetchZones();
+                displayCurrentPage();
             }
         });
         paginationControls.appendChild(nextButton);
         
-        // Zones per page dropdown (always show)
+        // Divider
+        const divider = document.createElement('div');
+        divider.className = 'pagination-divider';
+        paginationControls.appendChild(divider);
+        
+        // Zones per page dropdown
+        const perPageContainer = document.createElement('div');
+        perPageContainer.className = 'per-page-container';
+        
         const perPageLabel = document.createElement('label');
         perPageLabel.textContent = 'Per page:';
-        perPageLabel.style.marginLeft = '20px';
-        paginationControls.appendChild(perPageLabel);
+        perPageContainer.appendChild(perPageLabel);
         
         const perPageSelect = document.createElement('select');
-        perPageSelect.style.marginLeft = '8px';
+        perPageSelect.className = 'per-page-select';
         [10, 20, 50, 100].forEach(count => {
             const option = document.createElement('option');
             option.value = count;
@@ -237,11 +270,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         perPageSelect.addEventListener('change', (e) => {
             zonesPerPage = parseInt(e.target.value);
-            currentPage = 1;
-            showLoading();
-            fetchZones();
+            currentPage = 1; // Reset to first page
+            updatePagination();
+            displayCurrentPage();
         });
-        paginationControls.appendChild(perPageSelect);
+        perPageContainer.appendChild(perPageSelect);
+        paginationControls.appendChild(perPageContainer);
     }
 
     function toggleAllZones() {
@@ -272,13 +306,16 @@ document.addEventListener('DOMContentLoaded', () => {
         applySettingsBtn.disabled = selectedZones.size === 0;
     }
 
-    function updateZonesCount(totalCount) {
-        if (!zonesCountEl || !totalCount) return;
-        
+    function updateZonesCount() {
         const startIndex = (currentPage - 1) * zonesPerPage + 1;
-        const endIndex = Math.min(currentPage * zonesPerPage, totalCount);
+        const endIndex = Math.min(currentPage * zonesPerPage, allZones.length);
         
-        zonesCountEl.textContent = `Showing ${startIndex}-${endIndex} of ${totalCount} zones`;
+        if (allZones.length === 0) {
+            zonesCountEl.textContent = 'No zones';
+            return;
+        }
+        
+        zonesCountEl.textContent = `Showing ${startIndex}-${endIndex} of ${allZones.length} zones`;
     }
 
     function attachDirtyStateTracking() {
