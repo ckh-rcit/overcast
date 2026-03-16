@@ -10,13 +10,14 @@
 <body>
     <div class="container">
         <header>
-            <h1>⛅ Overcast</h1>
-            <p>Batch manage settings across multiple zones in your Cloudflare account</p>
+            <div class="header-content">
+                <div>
+                    <h1>⛅ Overcast</h1>
+                    <p>Batch manage settings across multiple zones in your Cloudflare account</p>
+                </div>
+                <button id="load-zones-btn" class="primary-btn">Load Zones</button>
+            </div>
         </header>
-
-        <section class="account-section">
-            <button id="load-zones-btn" class="primary-btn">Load Zones</button>
-        </section>
 
         <section class="zones-section" id="zones-section" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">

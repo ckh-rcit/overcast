@@ -40,9 +40,16 @@ body {
 
 /* Header */
 header {
-    padding: 48px 0;
+    padding: 32px 0;
     margin-bottom: 48px;
     border-bottom: 1px solid var(--border);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 32px;
 }
 
 header h1 {
@@ -66,13 +73,6 @@ section {
     margin-bottom: 24px;
     border-radius: 8px;
     border: 1px solid var(--border);
-}
-
-.account-section {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 32px;
 }
 
 section h2 {
