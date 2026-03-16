@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overcast</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Overcast</h1>
+            <p>Manage settings across multiple zones in your Cloudflare account</p>
+        </header>
+
+        <section class="account-section">
+            <h2>Account Setup</h2>
+            <div class="form-group">
+                <label for="account-id">Cloudflare Account ID</label>
+                <input type="text" id="account-id" placeholder="Enter your Cloudflare Account ID" required>
+            </div>
+            <div class="form-group">
+                <label for="zone-count">Zones per page</label>
+                <input type="number" id="zone-count" value="20" min="5" max="100">
+            </div>
+            <button id="load-zones-btn" class="primary-btn">Load Zones</button>
+        </section>
+
+        <section class="zones-section" id="zones-section" style="display: none;">
+            <h2>Zones</h2>
+            <div class="table-container">
+                <table id="zones-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all-zones"></th>
+                            <th>Zone Name</th>
+                            <th>Current Caching Level</th>
+                            <th>Current Browser Cache TTL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="zones-table-body">
+                        <!-- Zones will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination-controls" id="pagination-controls">
+                <!-- Pagination controls will be populated here -->
+            </div>
+        </section>
+
+        <section class="settings-section" id="settings-section" style="display: none;">
+            <h2>Batch Settings</h2>
+            <div class="form-group">
+                <label for="caching-level">Caching Level</label>
+                <select id="caching-level">
+                    <option value="">-- No Change --</option>
+                    <option value="off">Off</option>
+                    <option value="basic">Basic</option>
+                    <option value="simplified">Simplified</option>
+                    <option value="aggressive">Aggressive</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="browser-cache-ttl">Browser Cache TTL</label>
+                <input type="text" id="browser-cache-ttl" placeholder="e.g., 14400 (seconds) or 4h">
+                <small>Leave empty for no change. Enter seconds or use suffixes: s, m, h, d</small>
+            </div>
+            <button id="apply-settings-btn" class="primary-btn" disabled>Apply Settings to Selected Zones</button>
+            <p class="selected-count" id="selected-count">0 zones selected</p>
+        </section>
+
+        <div id="loading-indicator" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+
+        <div id="error-alert" class="alert alert-error" style="display: none;"></div>
+        <div id="success-alert" class="alert alert-success" style="display: none;"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
