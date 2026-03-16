@@ -46,7 +46,7 @@ export async function onRequest(context) {
     
     // Call Cloudflare API to list zones
     const zonesResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/zones?page=${page}&per_page=${perPage}`,
+      `https://api.cloudflare.com/client/v4/zones?account.id=${accountId}&page=${page}&per_page=${perPage}`,
       {
         headers: {
           'Authorization': `Bearer ${apiToken}`,
