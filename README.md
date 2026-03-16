@@ -4,12 +4,18 @@ Overcast is a tool for easily managing Cloudflare configurations across multiple
 
 ## Features
 
-- List all zones in your Cloudflare account with pagination (supports 50+ zones)
-- View current settings for each zone (caching level, browser cache TTL)
-- Batch update settings across multiple selected zones
-- Secure handling of Cloudflare API tokens (stored in environment secrets)
-- Responsive design for desktop and mobile use
-- Fully deployed on Cloudflare infrastructure
+- **Comprehensive Zone Management**: List all zones in your Cloudflare account with pagination
+- **Extensive Settings Support**: Manage 40+ zone settings organized by category:
+  - **Cache Settings**: Caching level, browser cache TTL, development mode, query string sorting
+  - **SSL/TLS Settings**: Encryption mode, TLS versions, Always Use HTTPS, automatic HTTPS rewrites
+  - **Security Settings**: Security level, challenge TTL, browser integrity check, WAF
+  - **Network Settings**: HTTP/2, HTTP/3, IPv6, WebSockets, IP geolocation
+  - **Speed & Optimization**: Brotli, early hints, Rocket Loader, Polish, WebP, minification
+  - **Scrape Shield**: Email obfuscation, hotlink protection, server-side excludes
+- **Batch Operations**: Apply settings to multiple zones simultaneously
+- **Modern UI**: Cloudflare-inspired dark theme with intuitive controls
+- **Secure API Handling**: All API tokens stored in environment secrets, never exposed to browser
+- **Fully Cloudflare-Native**: Deployed on Cloudflare Pages with Pages Functions backend
 
 ## Architecture
 
@@ -183,15 +189,70 @@ Deployment typically takes 1-2 minutes. You'll get a unique URL for each deploym
 
 ## Usage
 
-1. Visit your Overcast URL (e.g., `https://overcast.pages.dev`)
-2. Enter your Cloudflare Account ID (found in your Cloudflare dashboard under Account Settings)
-3. Click "Load Zones" to fetch your zones
-4. Select zones using checkboxes (use "Select All" for all zones on current page)
-5. Configure the settings you want to apply:
-   - Caching Level: Off, Basic, Simplified, Aggressive
-   - Browser Cache TTL: Enter value in seconds or with suffixes (s, m, h, d)
-6. Click "Apply Settings to Selected Zones"
-7. Confirm the action in the popup dialog
+1. **Access your application** at your Overcast URL (e.g., `https://overcast.pages.dev`)
+
+2. **Enter your Cloudflare Account ID**
+   - Find this in your Cloudflare dashboard under Account Settings
+   - Or in the URL when viewing your account: `dash.cloudflare.com/<ACCOUNT_ID>`
+
+3. **Load your zones**
+   - Click "Load Zones" to fetch all zones in your account
+   - Adjust "Zones per page" if you have many zones
+
+4. **Select zones to update**
+   - Use checkboxes to select individual zones
+   - Or click "Select All" to select all zones on the current page
+   - Selected count is displayed at the bottom
+
+5. **Configure settings by category**
+   
+   **Cache Settings:**
+   - Caching Level: Controls how Cloudflare caches content
+   - Browser Cache TTL: How long browsers cache resources
+   - Development Mode: Temporarily bypass cache
+   - Sort Query Strings: Improve cache hit rates
+   
+   **SSL/TLS Settings:**
+   - SSL Mode: Off, Flexible, Full, or Full (Strict)
+   - TLS Versions: Minimum TLS version and TLS 1.3 settings
+   - Always Use HTTPS: Redirect HTTP to HTTPS
+   - Automatic HTTPS Rewrites: Fix mixed content warnings
+   
+   **Security Settings:**
+   - Security Level: Threat sensitivity (Off to Under Attack)
+   - Challenge TTL: How long visitors stay verified
+   - Browser Integrity Check: Evaluate headers for threats
+   - WAF: Web Application Firewall
+   
+   **Network Settings:**
+   - HTTP/2 & HTTP/3: Enable modern protocols
+   - IPv6: Enable IPv6 support
+   - WebSockets: Allow WebSocket connections
+   - IP Geolocation: Add country code header
+   
+   **Speed & Optimization:**
+   - Brotli: Better compression for HTTPS
+   - Rocket Loader: Defer JavaScript loading
+   - Polish: Automatic image optimization
+   - WebP: Serve modern image format
+   - Mirage: Optimize for mobile
+   
+   **Scrape Shield:**
+   - Email Obfuscation: Hide emails from bots
+   - Hotlink Protection: Prevent image theft
+   - Server Side Excludes: Block content from bots
+
+6. **Apply settings**
+   - Only changed settings will be applied (leave dropdown as "-- No Change --" to skip)
+   - Toggle switches only apply when checked (for enabling features)
+   - Click "Apply Settings to Selected Zones"
+   - Confirm the action in the dialog
+   - Wait for success confirmation
+
+7. **View results**
+   - Success message shows how many zones were updated
+   - Zone list refreshes automatically to show new settings
+   - Any errors are displayed with details
 
 ## Development
 
@@ -238,9 +299,11 @@ overcast/
 │       ├── zones.js        # GET /api/zones - List zones with settings
 │       └── zones/
 │           └── settings.js # PATCH /api/zones/settings - Update settings
+├── shared/                 # Shared configuration
+│   └── settings-config.js  # Zone settings definitions and metadata
 ├── index.html              # Main frontend page
-├── script.js               # Frontend JavaScript
-├── style.css               # Styles
+├── script.js               # Frontend JavaScript (ES6 modules)
+├── style.css               # Cloudflare dark theme styles
 ├── wrangler.toml          # Cloudflare Pages configuration
 ├── package.json           # Dependencies and scripts
 ├── bun.lock              # Bun lockfile
