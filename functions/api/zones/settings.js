@@ -31,12 +31,32 @@ export async function onRequestPatch(context) {
     }
     
     // Prepare settings payload for Cloudflare API
+    // Convert settings object to array format expected by Cloudflare API
     const settingsPayload = [];
-    if (settings.caching_level !== undefined) {
-      settingsPayload.push({ id: 'caching_level', value: settings.caching_level });
-    }
-    if (settings.browser_cache_ttl !== undefined && settings.browser_cache_ttl !== null) {
-      settingsPayload.push({ id: 'browser_cache_ttl', value: settings.browser_cache_ttl.toString() });
+    
+    for (const [key, value] of Object.entries(settings)) {
+      if (value === undefined || value === null) {
+        continue; // Skip undefined/null values
+      }
+      
+      // Handle different value types
+      let apiValue;
+      
+      if (typeof value === 'boolean') {
+        // Convert boolean to 'on'/'off' string
+        apiValue = value ? 'on' : 'off';
+      } else if (typeof value === 'number') {
+        // Convert numbers to strings
+        apiValue = value.toString();
+      } else if (typeof value === 'object') {
+        // For objects like minify, pass as-is
+        apiValue = value;
+      } else {
+        // Strings and other types pass through
+        apiValue = value;
+      }
+      
+      settingsPayload.push({ id: key, value: apiValue });
     }
     
     if (settingsPayload.length === 0) {

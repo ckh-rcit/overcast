@@ -101,13 +101,22 @@ export async function onRequest(context) {
             return { ...zone, settings: {} };
           }
           
-          // Extract specific settings we care about
+          // Extract all settings - convert the array to an object keyed by setting ID
           const settings = {};
           settingsData.result.forEach(setting => {
-            if (setting.id === 'caching_level') {
-              settings.caching_level = setting.value;
+            // Store the value, handling special cases
+            if (setting.id === 'minify') {
+              // Minify is an object with css/html/js subfields
+              settings[setting.id] = setting.value;
             } else if (setting.id === 'browser_cache_ttl') {
-              settings.browser_cache_ttl = parseInt(setting.value) || 0;
+              // Convert to integer for easier handling
+              settings[setting.id] = parseInt(setting.value) || 0;
+            } else if (typeof setting.value === 'string' && (setting.value === 'on' || setting.value === 'off')) {
+              // Convert on/off strings to booleans for toggles
+              settings[setting.id] = setting.value === 'on';
+            } else {
+              // Store value as-is
+              settings[setting.id] = setting.value;
             }
           });
           

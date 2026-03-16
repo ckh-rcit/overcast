@@ -3,25 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overcast</title>
+    <title>Overcast - Cloudflare Zone Settings Manager</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Overcast</h1>
-            <p>Manage settings across multiple zones in your Cloudflare account</p>
+            <h1>⛅ Overcast</h1>
+            <p>Batch manage settings across multiple zones in your Cloudflare account</p>
         </header>
 
         <section class="account-section">
             <h2>Account Setup</h2>
-            <div class="form-group">
-                <label for="account-id">Cloudflare Account ID</label>
-                <input type="text" id="account-id" placeholder="Enter your Cloudflare Account ID" required>
-            </div>
-            <div class="form-group">
-                <label for="zone-count">Zones per page</label>
-                <input type="number" id="zone-count" value="20" min="5" max="100">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="account-id">Cloudflare Account ID</label>
+                    <input type="text" id="account-id" placeholder="Enter your Cloudflare Account ID" required>
+                    <small>Find this in your Cloudflare dashboard URL or account overview</small>
+                </div>
+                <div class="form-group">
+                    <label for="zone-count">Zones per page</label>
+                    <input type="number" id="zone-count" value="20" min="5" max="100">
+                    <small>Number of zones to display at once</small>
+                </div>
             </div>
             <button id="load-zones-btn" class="primary-btn">Load Zones</button>
         </section>
@@ -34,8 +38,11 @@
                         <tr>
                             <th><input type="checkbox" id="select-all-zones"></th>
                             <th>Zone Name</th>
-                            <th>Current Caching Level</th>
-                            <th>Current Browser Cache TTL</th>
+                            <th>Status</th>
+                            <th>Caching</th>
+                            <th>Browser TTL</th>
+                            <th>SSL Mode</th>
+                            <th>Security</th>
                         </tr>
                     </thead>
                     <tbody id="zones-table-body">
@@ -50,23 +57,291 @@
 
         <section class="settings-section" id="settings-section" style="display: none;">
             <h2>Batch Settings</h2>
-            <div class="form-group">
-                <label for="caching-level">Caching Level</label>
-                <select id="caching-level">
-                    <option value="">-- No Change --</option>
-                    <option value="off">Off</option>
-                    <option value="basic">Basic</option>
-                    <option value="simplified">Simplified</option>
-                    <option value="aggressive">Aggressive</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="browser-cache-ttl">Browser Cache TTL</label>
-                <input type="text" id="browser-cache-ttl" placeholder="e.g., 14400 (seconds) or 4h">
-                <small>Leave empty for no change. Enter seconds or use suffixes: s, m, h, d</small>
-            </div>
-            <button id="apply-settings-btn" class="primary-btn" disabled>Apply Settings to Selected Zones</button>
             <p class="selected-count" id="selected-count">0 zones selected</p>
+            
+            <!-- Cache Settings -->
+            <div class="settings-category">
+                <h3>🗄️ Cache Settings</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-caching_level">Caching Level</label>
+                        <select id="setting-caching_level" class="setting-input">
+                            <option value="">-- No Change --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-browser_cache_ttl">Browser Cache TTL</label>
+                        <select id="setting-browser_cache_ttl" class="setting-input">
+                            <option value="">-- No Change --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-development_mode">Development Mode</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-development_mode" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Temporarily bypass cache (auto-disables after 3 hours)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-sort_query_string_for_cache">Sort Query String</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-sort_query_string_for_cache" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Improve cache hit rates by sorting query parameters</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SSL/TLS Settings -->
+            <div class="settings-category">
+                <h3>🔒 SSL/TLS Settings</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-ssl">SSL/TLS Encryption Mode</label>
+                        <select id="setting-ssl" class="setting-input">
+                            <option value="">-- No Change --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-min_tls_version">Minimum TLS Version</label>
+                        <select id="setting-min_tls_version" class="setting-input">
+                            <option value="">-- No Change --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-tls_1_3">TLS 1.3</label>
+                        <select id="setting-tls_1_3" class="setting-input">
+                            <option value="">-- No Change --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-always_use_https">Always Use HTTPS</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-always_use_https" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Redirect all HTTP requests to HTTPS</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-automatic_https_rewrites">Automatic HTTPS Rewrites</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-automatic_https_rewrites" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Rewrite insecure URLs to HTTPS automatically</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-opportunistic_encryption">Opportunistic Encryption</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-opportunistic_encryption" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Enable encrypted connections for more requests</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="settings-category">
+                <h3>🛡️ Security Settings</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-security_level">Security Level</label>
+                        <select id="setting-security_level" class="setting-input">
+                            <option value="">-- No Change --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-challenge_ttl">Challenge TTL</label>
+                        <select id="setting-challenge_ttl" class="setting-input">
+                            <option value="">-- No Change --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-browser_check">Browser Integrity Check</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-browser_check" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Evaluate HTTP headers for threats</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-privacy_pass">Privacy Pass Support</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-privacy_pass" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Less intrusive challenges for verified users</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-waf">Web Application Firewall</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-waf" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Enable WAF managed rules</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Settings -->
+            <div class="settings-category">
+                <h3>🌐 Network Settings</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-http2">HTTP/2</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-http2" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Enable HTTP/2 protocol</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-http3">HTTP/3 (QUIC)</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-http3" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Enable HTTP/3 with QUIC</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-ipv6">IPv6 Compatibility</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-ipv6" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Enable IPv6 support</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-websockets">WebSockets</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-websockets" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Allow WebSocket connections</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-pseudo_ipv4">Pseudo IPv4</label>
+                        <select id="setting-pseudo_ipv4" class="setting-input">
+                            <option value="">-- No Change --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-ip_geolocation">IP Geolocation Header</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-ip_geolocation" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Include visitor country code in requests</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Speed/Optimization Settings -->
+            <div class="settings-category">
+                <h3>⚡ Speed & Optimization</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-brotli">Brotli Compression</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-brotli" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Faster compression for HTTPS traffic</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-early_hints">Early Hints</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-early_hints" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Speed up page rendering with 103 status</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-h2_prioritization">HTTP/2 Prioritization</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-h2_prioritization" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Optimize resource delivery</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-rocket_loader">Rocket Loader</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-rocket_loader" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Defer JavaScript loading automatically</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-polish">Polish (Image Optimization)</label>
+                        <select id="setting-polish" class="setting-input">
+                            <option value="">-- No Change --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-webp">WebP</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-webp" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Serve WebP images when supported</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-mirage">Mirage</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-mirage" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Optimize images for mobile devices</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrape Shield -->
+            <div class="settings-category">
+                <h3>🔰 Scrape Shield</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setting-email_obfuscation">Email Obfuscation</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-email_obfuscation" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Hide email addresses from bots</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-server_side_exclude">Server Side Excludes</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-server_side_exclude" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Block specific content from suspicious visitors</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="setting-hotlink_protection">Hotlink Protection</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-hotlink_protection" class="setting-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <small>Protect images from off-site linking</small>
+                    </div>
+                </div>
+            </div>
+
+            <button id="apply-settings-btn" class="primary-btn" disabled>Apply Settings to Selected Zones</button>
         </section>
 
         <div id="loading-indicator" class="loading" style="display: none;">
@@ -78,6 +353,6 @@
         <div id="success-alert" class="alert alert-success" style="display: none;"></div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
