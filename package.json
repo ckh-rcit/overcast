@@ -3,9 +3,9 @@
 	"version": "1.0.0",
 	"description": "Cloudflare zone configuration management tool",
 	"scripts": {
-		"dev": "wrangler pages dev frontend",
-		"deploy": "wrangler pages deploy frontend --project-name overcast",
-		"deploy:production": "wrangler pages deploy frontend --project-name overcast --branch production"
+		"dev": "wrangler pages dev .",
+		"deploy": "wrangler pages deploy . --project-name overcast",
+		"deploy:production": "wrangler pages deploy . --project-name overcast --branch production"
 	},
 	"devDependencies": {
 		"wrangler": "^4.74.0"

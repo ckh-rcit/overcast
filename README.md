@@ -15,8 +15,8 @@ Overcast is a tool for easily managing Cloudflare configurations across multiple
 
 This application is a full-stack Cloudflare Pages application:
 
-1. **Frontend**: Static HTML/CSS/JS served by Cloudflare Pages (`/frontend`)
-2. **Backend**: Cloudflare Pages Functions that handle API calls (`/frontend/functions/api`)
+1. **Frontend**: Static HTML/CSS/JS served by Cloudflare Pages (root directory)
+2. **Backend**: Cloudflare Pages Functions that handle API calls (`/functions/api`)
    - `/api/zones` - Lists zones and their settings
    - `/api/zones/settings` - Updates zone settings
 
@@ -54,7 +54,7 @@ This method automatically deploys your application whenever you push to GitHub.
    - **Project name**: `overcast`
    - **Production branch**: `main`
    - **Build command**: (leave empty - no build needed)
-   - **Build output directory**: `frontend`
+   - **Build output directory**: `/` (root directory)
    - Click **Save and Deploy**
 
 4. **Add environment variable:**
@@ -105,7 +105,7 @@ This method automatically deploys your application whenever you push to GitHub.
    ```
    Or directly:
    ```bash
-   bunx wrangler pages deploy frontend --project-name overcast
+   bunx wrangler pages deploy . --project-name overcast
    ```
 
 6. **Access your application:**
@@ -123,7 +123,7 @@ This method automatically deploys your application whenever you push to GitHub.
    - **Project name**: `overcast`
    - **Production branch**: `main` (or your default branch)
    - **Build command**: (leave empty - no build needed)
-   - **Build output directory**: `frontend`
+   - **Build output directory**: `/` (root directory)
 
 3. **Add environment variable:**
    - After the first deployment, go to **Settings** → **Environment variables**
@@ -195,7 +195,7 @@ To run this locally for development:
    ```
    Or directly:
    ```bash
-   bunx wrangler pages dev frontend
+   bunx wrangler pages dev .
    ```
 
 4. **Access the local application:**
@@ -214,18 +214,18 @@ The development server will automatically reload when you make changes to your f
 
 ```
 overcast/
-├── frontend/
-│   ├── functions/          # Cloudflare Pages Functions (API backend)
-│   │   └── api/
-│   │       ├── zones.js    # GET /api/zones - List zones with settings
-│   │       └── zones/
-│   │           └── settings.js  # PATCH /api/zones/settings - Update settings
-│   ├── index.html          # Main frontend page
-│   ├── script.js           # Frontend JavaScript
-│   └── style.css           # Styles
+├── functions/              # Cloudflare Pages Functions (API backend)
+│   └── api/
+│       ├── zones.js        # GET /api/zones - List zones with settings
+│       └── zones/
+│           └── settings.js # PATCH /api/zones/settings - Update settings
+├── index.html              # Main frontend page
+├── script.js               # Frontend JavaScript
+├── style.css               # Styles
 ├── wrangler.toml          # Cloudflare Pages configuration
 ├── package.json           # Dependencies and scripts
-└── bun.lock              # Bun lockfile
+├── bun.lock              # Bun lockfile
+└── .gitignore            # Git ignore rules
 ```
 
 ## License
