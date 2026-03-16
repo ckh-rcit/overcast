@@ -223,9 +223,9 @@ overcast/
 │   ├── index.html          # Main frontend page
 │   ├── script.js           # Frontend JavaScript
 │   └── style.css           # Styles
-├── worker/                 # Legacy worker code (deprecated)
 ├── wrangler.toml          # Cloudflare Pages configuration
-└── package.json           # Node.js dependencies
+├── package.json           # Dependencies and scripts
+└── bun.lock              # Bun lockfile
 ```
 
 ## License
