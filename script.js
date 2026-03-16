@@ -165,10 +165,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Format values for display
             const status = zone.status || 'unknown';
-            const cachingLevel = zone.settings?.caching_level || 'N/A';
+            const cachingLevel = formatSettingValue('caching_level', zone.settings?.caching_level);
             const browserCacheTTL = formatBrowserCacheTTL(zone.settings?.browser_cache_ttl);
-            const sslMode = zone.settings?.ssl || 'N/A';
-            const securityLevel = zone.settings?.security_level || 'N/A';
+            const sslMode = formatSettingValue('ssl', zone.settings?.ssl);
+            const securityLevel = formatSettingValue('security_level', zone.settings?.security_level);
             
             row.innerHTML = `
                 <td><input type="checkbox" ${isSelected ? 'checked' : ''} data-zone-id="${zone.id}"></td>
@@ -196,11 +196,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function formatBrowserCacheTTL(ttl) {
-        if (!ttl) return 'N/A';
-        if (ttl === 0) return 'Respect Headers';
+    function formatSettingValue(settingId, value) {
+        if (value === undefined || value === null) return 'N/A';
         
-        // Convert seconds to human-readable format
+        // Look up the setting config
+        const setting = getSettingById(settingId);
+        if (!setting) return value.toString();
+        
+        // For select-type settings, look up the label from options
+        if (setting.type === 'select' && setting.options) {
+            const option = setting.options.find(opt => opt.value == value);
+            return option ? option.label : value.toString();
+        }
+        
+        // For toggle-type settings, return On/Off
+        if (setting.type === 'toggle') {
+            return value ? 'On' : 'Off';
+        }
+        
+        return value.toString();
+    }
+
+    function formatBrowserCacheTTL(ttl) {
+        if (ttl === undefined || ttl === null) return 'N/A';
+        if (ttl === 0) return 'Respect Existing Headers';
+        
+        // Look up in settings config for proper label
+        const setting = getSettingById('browser_cache_ttl');
+        if (setting && setting.options) {
+            const option = setting.options.find(opt => opt.value == ttl);
+            if (option) return option.label;
+        }
+        
+        // Fallback: Convert seconds to human-readable format
         const days = Math.floor(ttl / 86400);
         const hours = Math.floor((ttl % 86400) / 3600);
         const minutes = Math.floor((ttl % 3600) / 60);
