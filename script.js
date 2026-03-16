@@ -2,8 +2,6 @@ import { ZONE_SETTINGS, getSettingById } from './shared/settings-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
-    const accountIdInput = document.getElementById('account-id');
-    const zoneCountInput = document.getElementById('zone-count');
     const loadZonesBtn = document.getElementById('load-zones-btn');
     const zonesSection = document.getElementById('zones-section');
     const settingsSection = document.getElementById('settings-section');
@@ -24,10 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalPages = 1;
     let selectedZones = new Set();
     const apiBaseUrl = '/api';
-    let configuredAccountId = null;
 
     // Initialize
-    checkServerConfig();
     initializeSettingsControls();
     attachDirtyStateTracking();
 
@@ -35,32 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadZonesBtn.addEventListener('click', loadZones);
     selectAllZonesCheckbox.addEventListener('change', toggleAllZones);
     applySettingsBtn.addEventListener('click', applySettingsToSelectedZones);
-
-    // Check if account ID is configured on server
-    async function checkServerConfig() {
-        try {
-            const response = await fetch(`${apiBaseUrl}/config`);
-            if (response.ok) {
-                const config = await response.json();
-                if (config.hasAccountId && config.accountId) {
-                    configuredAccountId = config.accountId;
-                    accountIdInput.value = configuredAccountId;
-                    accountIdInput.disabled = true;
-                    accountIdInput.placeholder = 'Configured via environment variable';
-                    
-                    // Add helpful note
-                    const note = document.createElement('small');
-                    note.className = 'text-secondary';
-                    note.style.display = 'block';
-                    note.style.marginTop = '4px';
-                    note.textContent = '✓ Account ID configured server-side';
-                    accountIdInput.parentElement.appendChild(note);
-                }
-            }
-        } catch (error) {
-            console.log('Could not check server config:', error);
-        }
-    }
 
     // Functions
     function initializeSettingsControls() {
@@ -110,29 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 8000);
     }
 
-    function validateAccountId() {
-        // If account ID is configured server-side, skip validation
-        if (configuredAccountId) {
-            return true;
-        }
-        
-        const accountId = accountIdInput.value.trim();
-        if (!accountId) {
-            showError('Please enter your Cloudflare Account ID');
-            return false;
-        }
-        // Basic validation - Account IDs are typically 32-character hex strings
-        if (!/^[a-f0-9]{32}$/.test(accountId)) {
-            showError('Please enter a valid Cloudflare Account ID (32-character hexadecimal string)');
-            return false;
-        }
-        return true;
-    }
-
     function loadZones() {
-        if (!validateAccountId()) return;
-
-        zonesPerPage = parseInt(zoneCountInput.value);
         currentPage = 1;
         selectedZones.clear();
         updateSelectAllCheckbox();
@@ -144,14 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchZones() {
         try {
-            const accountId = configuredAccountId || accountIdInput.value.trim();
-            
-            // Build URL - only include account_id param if not configured server-side
-            let url = `${apiBaseUrl}/zones?page=${currentPage}&per_page=${zonesPerPage}`;
-            if (!configuredAccountId && accountId) {
-                url += `&account_id=${encodeURIComponent(accountId)}`;
-            }
-            
+            const url = `${apiBaseUrl}/zones?page=${currentPage}&per_page=${zonesPerPage}`;
             const response = await fetch(url);
 
             if (!response.ok) {
@@ -278,6 +219,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         paginationControls.appendChild(nextButton);
+        
+        // Zones per page dropdown
+        const perPageLabel = document.createElement('label');
+        perPageLabel.textContent = 'Per page:';
+        perPageLabel.style.marginLeft = '20px';
+        paginationControls.appendChild(perPageLabel);
+        
+        const perPageSelect = document.createElement('select');
+        perPageSelect.style.marginLeft = '8px';
+        [10, 20, 50, 100].forEach(count => {
+            const option = document.createElement('option');
+            option.value = count;
+            option.textContent = count;
+            option.selected = zonesPerPage === count;
+            perPageSelect.appendChild(option);
+        });
+        perPageSelect.addEventListener('change', (e) => {
+            zonesPerPage = parseInt(e.target.value);
+            currentPage = 1;
+            showLoading();
+            fetchZones();
+        });
+        paginationControls.appendChild(perPageSelect);
     }
 
     function toggleAllZones() {
@@ -447,7 +411,6 @@ document.addEventListener('DOMContentLoaded', () => {
         applySettingsBtn.disabled = true;
         
         try {
-            const accountId = accountIdInput.value.trim();
             const zoneIds = Array.from(selectedZones);
             
             const response = await fetch(`${apiBaseUrl}/zones/settings`, {
@@ -456,7 +419,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    account_id: accountId,
                     zone_ids: zoneIds,
                     settings: settings
                 })

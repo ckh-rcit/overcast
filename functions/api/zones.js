@@ -18,20 +18,17 @@ export async function onRequest(context) {
 
   try {
     const url = new URL(request.url);
-    // Allow account_id from query parameter or environment variable
-    let accountId = url.searchParams.get('account_id');
-    
-    // If no account_id provided in query, try to use environment variable
-    if (!accountId) {
-      accountId = env.CLOUDFLARE_ACCOUNT_ID;
-    }
-    
     const page = parseInt(url.searchParams.get('page')) || 1;
     const perPage = parseInt(url.searchParams.get('per_page')) || 20;
     
+    // Get account ID from environment variable (required)
+    const accountId = env.CLOUDFLARE_ACCOUNT_ID;
+    
     if (!accountId) {
-      return new Response(JSON.stringify({ error: 'Account ID is required. Provide it as a query parameter or set CLOUDFLARE_ACCOUNT_ID environment variable.' }), {
-        status: 400,
+      return new Response(JSON.stringify({ 
+        error: 'CLOUDFLARE_ACCOUNT_ID environment variable is not configured. Please contact your administrator.' 
+      }), {
+        status: 500,
         headers: { 
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
