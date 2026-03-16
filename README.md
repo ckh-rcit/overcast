@@ -33,7 +33,50 @@ The API token is stored securely in environment variables and never exposed to t
   - Zone.Settings:Read
   - Zone.Settings:Edit
 
-### Option 1: Deploy with Wrangler (Recommended)
+### Option 1: Automatic Deployment via GitHub (Recommended)
+
+This method automatically deploys your application whenever you push to GitHub.
+
+1. **Push your code to GitHub** (if not already done):
+   ```bash
+   git add -A
+   git commit -m "Initial commit"
+   git push origin main
+   ```
+
+2. **Connect to Cloudflare Pages:**
+   - Go to your [Cloudflare Dashboard](https://dash.cloudflare.com)
+   - Navigate to **Workers & Pages** → **Create Application** → **Pages** → **Connect to Git**
+   - Authorize Cloudflare to access your GitHub account
+   - Select the `overcast` repository
+
+3. **Configure the build settings:**
+   - **Project name**: `overcast`
+   - **Production branch**: `main`
+   - **Build command**: (leave empty - no build needed)
+   - **Build output directory**: `frontend`
+   - Click **Save and Deploy**
+
+4. **Add environment variable:**
+   - After the first deployment, go to **Settings** → **Environment variables**
+   - Click **Add variable**
+   - **Variable name**: `CLOUDFLARE_API_TOKEN`
+   - **Value**: Your Cloudflare API Token
+   - **Environment**: Production (and optionally Preview)
+   - **Type**: Encrypt (select the lock icon)
+   - Click **Save**
+
+5. **Redeploy:**
+   - Go to **Deployments** tab
+   - Click **Retry deployment** on the latest deployment
+   - Or simply push a new commit to trigger automatic deployment
+
+6. **Access your application:**
+   Your application will be available at `https://overcast.pages.dev`
+
+**Future deployments:** From now on, every push to the `main` branch will automatically deploy to production!
+
+### Option 2: Manual Deploy with Wrangler CLI
 
 1. **Install dependencies:**
    ```bash
@@ -69,7 +112,7 @@ The API token is stored securely in environment variables and never exposed to t
    Your application will be available at `https://overcast.pages.dev`
    (or your custom domain if configured)
 
-### Option 2: Deploy via Cloudflare Dashboard
+### Option 3: Deploy via Cloudflare Dashboard (without Git)
 
 1. **Connect your Git repository:**
    - Go to your [Cloudflare Dashboard](https://dash.cloudflare.com)
@@ -102,6 +145,22 @@ To use a custom domain:
 2. Navigate to **Custom domains**
 3. Click **Set up a custom domain**
 4. Enter your domain and follow the instructions
+
+## Making Changes and Deploying Updates
+
+If you set up automatic deployment via GitHub (Option 1):
+
+1. **Make your changes locally**
+2. **Commit and push:**
+   ```bash
+   git add -A
+   git commit -m "Description of your changes"
+   git push
+   ```
+3. **Automatic deployment:** Cloudflare Pages will automatically detect the push and deploy your changes
+4. **Monitor deployment:** Watch the progress in the Cloudflare Dashboard under **Deployments**
+
+Deployment typically takes 1-2 minutes. You'll get a unique URL for each deployment, and successful deployments are automatically promoted to production.
 
 ## Usage
 
