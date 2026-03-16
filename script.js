@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderPagination() {
         paginationControls.innerHTML = '';
         
-        if (totalPages <= 1) return;
+        // Always show pagination controls (even for single page) to show per-page selector
         
         // Previous button
         const prevButton = document.createElement('button');
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         paginationControls.appendChild(nextButton);
         
-        // Zones per page dropdown
+        // Zones per page dropdown (always show)
         const perPageLabel = document.createElement('label');
         perPageLabel.textContent = 'Per page:';
         perPageLabel.style.marginLeft = '20px';
