@@ -29,9 +29,28 @@ The API token is stored securely in environment variables and never exposed to t
 - [Bun](https://bun.sh) installed (or Node.js and npm)
 - A Cloudflare account
 - Cloudflare API Token with the following permissions:
-  - Account.Zones:Read
-  - Zone.Settings:Read
-  - Zone.Settings:Edit
+  - **Zone** → **Zone** → **Read**
+  - **Zone** → **Zone Settings** → **Read**
+  - **Zone** → **Zone Settings** → **Edit**
+
+#### Creating Your API Token
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens)
+2. Click **Create Token**
+3. Click **Create Custom Token**
+4. Give it a name (e.g., "Overcast Zone Management")
+5. Add the permissions:
+   - **Permissions:**
+     - Zone → Zone → Read
+     - Zone → Zone Settings → Read
+     - Zone → Zone Settings → Edit
+   - **Account Resources:**
+     - Include → All accounts (or select specific account)
+   - **Zone Resources:**
+     - Include → All zones (or select specific zones)
+6. Click **Continue to summary**
+7. Click **Create Token**
+8. **Copy the token** - you won't be able to see it again!
 
 ### Option 1: Automatic Deployment via GitHub (Recommended)
 
