@@ -1,3 +1,5 @@
+import { ZONE_SETTINGS, getSettingById } from './shared/settings-config.js';
+
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const accountIdInput = document.getElementById('account-id');
@@ -13,8 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingIndicator = document.getElementById('loading-indicator');
     const errorAlert = document.getElementById('error-alert');
     const successAlert = document.getElementById('success-alert');
-    const cachingLevelSelect = document.getElementById('caching-level');
-    const browserCacheTTLInput = document.getElementById('browser-cache-ttl');
 
     // State
     let zones = [];
@@ -22,15 +22,38 @@ document.addEventListener('DOMContentLoaded', () => {
     let zonesPerPage = 20;
     let totalPages = 1;
     let selectedZones = new Set();
-    // API URLs are relative - they'll use the same domain as the frontend
     const apiBaseUrl = '/api';
 
-    // Initialize
+    // Initialize settings form controls
+    initializeSettingsControls();
+
+    // Event listeners
     loadZonesBtn.addEventListener('click', loadZones);
     selectAllZonesCheckbox.addEventListener('change', toggleAllZones);
     applySettingsBtn.addEventListener('click', applySettingsToSelectedZones);
 
     // Functions
+    function initializeSettingsControls() {
+        // Populate all select dropdowns with their options from config
+        ZONE_SETTINGS.forEach(setting => {
+            const element = document.getElementById(`setting-${setting.id}`);
+            if (!element) return;
+
+            if (setting.type === 'select' && setting.options) {
+                // Clear existing options except the "No Change" option
+                element.innerHTML = '<option value="">-- No Change --</option>';
+                
+                // Add all options from config
+                setting.options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.textContent = opt.label;
+                    element.appendChild(option);
+                });
+            }
+        });
+    }
+
     function showLoading() {
         loadingIndicator.style.display = 'flex';
     }
@@ -45,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         successAlert.style.display = 'none';
         setTimeout(() => {
             errorAlert.style.display = 'none';
-        }, 5000);
+        }, 8000);
     }
 
     function showSuccess(message) {
@@ -54,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         errorAlert.style.display = 'none';
         setTimeout(() => {
             successAlert.style.display = 'none';
-        }, 5000);
+        }, 8000);
     }
 
     function validateAccountId() {
@@ -120,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         zonesTableBody.innerHTML = '';
         
         if (zones.length === 0) {
-            zonesTableBody.innerHTML = '<tr><td colspan="4">No zones found</td></tr>';
+            zonesTableBody.innerHTML = '<tr><td colspan="7" class="text-secondary">No zones found</td></tr>';
             return;
         }
 
@@ -129,11 +152,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             row.className = isSelected ? 'selected' : '';
             
+            // Format values for display
+            const status = zone.status || 'unknown';
+            const cachingLevel = zone.settings?.caching_level || 'N/A';
+            const browserCacheTTL = formatBrowserCacheTTL(zone.settings?.browser_cache_ttl);
+            const sslMode = zone.settings?.ssl || 'N/A';
+            const securityLevel = zone.settings?.security_level || 'N/A';
+            
             row.innerHTML = `
                 <td><input type="checkbox" ${isSelected ? 'checked' : ''} data-zone-id="${zone.id}"></td>
                 <td>${zone.name}</td>
-                <td>${zone.settings?.caching_level || 'Loading...'}</td>
-                <td>${zone.settings?.browser_cache_ttl || 'Loading...'} seconds</td>
+                <td><span class="badge badge-${status === 'active' ? 'on' : 'off'}">${status}</span></td>
+                <td>${cachingLevel}</td>
+                <td>${browserCacheTTL}</td>
+                <td>${sslMode}</td>
+                <td>${securityLevel}</td>
             `;
             
             const checkbox = row.querySelector('input[type="checkbox"]');
@@ -152,6 +185,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function formatBrowserCacheTTL(ttl) {
+        if (!ttl) return 'N/A';
+        if (ttl === 0) return 'Respect Headers';
+        
+        // Convert seconds to human-readable format
+        const days = Math.floor(ttl / 86400);
+        const hours = Math.floor((ttl % 86400) / 3600);
+        const minutes = Math.floor((ttl % 3600) / 60);
+        
+        if (days > 0) return `${days}d`;
+        if (hours > 0) return `${hours}h`;
+        if (minutes > 0) return `${minutes}m`;
+        return `${ttl}s`;
+    }
+
     function renderPagination() {
         paginationControls.innerHTML = '';
         
@@ -164,7 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
         prevButton.addEventListener('click', () => {
             if (currentPage > 1) {
                 currentPage--;
-                loadZones();
+                showLoading();
+                fetchZones();
             }
         });
         paginationControls.appendChild(prevButton);
@@ -181,7 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
         nextButton.addEventListener('click', () => {
             if (currentPage < totalPages) {
                 currentPage++;
-                loadZones();
+                showLoading();
+                fetchZones();
             }
         });
         paginationControls.appendChild(nextButton);
@@ -211,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateSelectedCount() {
-        selectedCountEl.textContent = `${selectedZones.size} zones selected`;
+        selectedCountEl.textContent = `${selectedZones.size} zone${selectedZones.size !== 1 ? 's' : ''} selected`;
         applySettingsBtn.disabled = selectedZones.size === 0;
     }
 
@@ -221,26 +271,53 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const cachingLevel = cachingLevelSelect.value;
-        const browserCacheTTLRaw = browserCacheTTLInput.value.trim();
-        
-        // Validate inputs
-        if (!cachingLevel && !browserCacheTTLRaw) {
+        // Collect all settings that have been changed
+        const settings = {};
+        let hasChanges = false;
+
+        ZONE_SETTINGS.forEach(settingConfig => {
+            const element = document.getElementById(`setting-${settingConfig.id}`);
+            if (!element) return;
+
+            let value;
+            
+            if (settingConfig.type === 'toggle') {
+                // For toggle switches, check if parent element has the toggle-switch class
+                const toggleContainer = element.closest('.toggle-switch');
+                if (toggleContainer) {
+                    // Only include if checkbox is checked (meaning user wants to enable it)
+                    // We'll need a way to know if user touched it - for now, we skip unchecked toggles
+                    // This is a limitation - we might need "3-state" toggles (on/off/no-change)
+                    // For simplicity, we'll include all checked toggles
+                    if (element.checked) {
+                        value = true;
+                        hasChanges = true;
+                    }
+                }
+            } else if (settingConfig.type === 'select') {
+                value = element.value;
+                if (value !== '') {  // Empty string means "No Change"
+                    // Convert numeric strings to numbers where appropriate
+                    if (settingConfig.id === 'browser_cache_ttl' || settingConfig.id === 'challenge_ttl') {
+                        value = parseInt(value);
+                    }
+                    hasChanges = true;
+                }
+            }
+
+            if (value !== undefined && value !== '') {
+                settings[settingConfig.id] = value;
+            }
+        });
+
+        if (!hasChanges) {
             showError('Please select at least one setting to apply');
             return;
         }
 
-        let browserCacheTTL = null;
-        if (browserCacheTTLRaw) {
-            browserCacheTTL = parseTTL(browserCacheTTLRaw);
-            if (browserCacheTTL === null) {
-                showError('Invalid Browser Cache TTL format. Use seconds or suffixes: s, m, h, d (e.g., 3600, 1h, 30m)');
-                return;
-            }
-        }
-
         // Confirm action
-        if (!window.confirm(`Apply settings to ${selectedZones.size} selected zone(s)?`)) {
+        const settingsCount = Object.keys(settings).length;
+        if (!window.confirm(`Apply ${settingsCount} setting(s) to ${selectedZones.size} selected zone(s)?`)) {
             return;
         }
 
@@ -259,10 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     account_id: accountId,
                     zone_ids: zoneIds,
-                    settings: {
-                        caching_level: cachingLevel || undefined,
-                        browser_cache_ttl: browserCacheTTL
-                    }
+                    settings: settings
                 })
             });
 
@@ -276,10 +350,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
 
-            showSuccess(`Successfully applied settings to ${data.updated_count} zones`);
+            showSuccess(`✓ Successfully applied ${settingsCount} setting(s) to ${data.updated_count} of ${selectedZones.size} zone(s)`);
+            
+            // Clear form inputs after successful application
+            resetSettingsForm();
             
             // Refresh zone data to show updated settings
-            loadZones();
+            setTimeout(() => {
+                showLoading();
+                fetchZones();
+            }, 1500);
             
         } catch (error) {
             showError(`Failed to apply settings: ${error.message}`);
@@ -290,20 +370,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function parseTTL(input) {
-        // Parse TTL input like "3600", "1h", "30m", "45s", "2d"
-        const match = input.match(/^(\d+)([smhd]?)$/);
-        if (!match) return null;
+    function resetSettingsForm() {
+        // Reset all select dropdowns to "No Change"
+        document.querySelectorAll('.setting-input[type="checkbox"]').forEach(input => {
+            input.checked = false;
+        });
         
-        const value = parseInt(match[1]);
-        const unit = match[2] || 's'; // default to seconds
-        
-        switch (unit) {
-            case 's': return value;
-            case 'm': return value * 60;
-            case 'h': return value * 3600;
-            case 'd': return value * 86400;
-            default: return null;
-        }
+        document.querySelectorAll('.setting-input').forEach(input => {
+            if (input.tagName === 'SELECT') {
+                input.value = '';
+            }
+        });
     }
 });
