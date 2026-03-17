@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const progressPercentage = document.getElementById('progress-percentage');
     const progressSummary = document.getElementById('progress-summary');
     const progressDetails = document.getElementById('progress-details');
+    const progressActions = document.getElementById('progress-actions');
+    const dismissProgressBtn = document.getElementById('dismiss-progress-btn');
     const errorAlert = document.getElementById('error-alert');
     const successAlert = document.getElementById('success-alert');
 
@@ -38,6 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
     loadZonesBtn.addEventListener('click', loadZones);
     selectAllZonesCheckbox.addEventListener('change', toggleAllZones);
     applySettingsBtn.addEventListener('click', applySettingsToSelectedZones);
+    dismissProgressBtn.addEventListener('click', () => {
+        hideProgress();
+        // Refresh zones to show updated data
+        showLoading();
+        fetchAllZones();
+    });
 
     // Functions
     function initializeSettingsControls() {
@@ -494,6 +502,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initialize progress
         updateProgress(0, zoneIds.length, 'Preparing to apply settings...');
         progressDetails.innerHTML = '';
+        progressActions.style.display = 'none'; // Hide dismiss button initially
+        
+        // Log the settings being sent for debugging
+        console.log('Applying settings:', settings);
+        console.log('To zones:', zoneIds);
         
         try {
             const response = await fetch(`${apiBaseUrl}/zones/settings`, {
@@ -507,11 +520,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
             const data = await response.json();
+            
+            console.log('API response:', data);
+
+            if (!response.ok) {
+                throw new Error(data.error || `HTTP error! status: ${response.status}`);
+            }
             
             if (data.error) {
                 throw new Error(data.error);
@@ -541,12 +556,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clear form inputs after successful application
             resetSettingsForm();
             
-            // Refresh zone data to show updated settings
-            setTimeout(() => {
-                hideProgress();
-                showLoading();
-                fetchAllZones();
-            }, 3000);
+            // Show dismiss button instead of auto-hiding
+            progressActions.style.display = 'flex';
             
         } catch (error) {
             hideProgress();

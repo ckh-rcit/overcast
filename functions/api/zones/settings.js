@@ -80,16 +80,20 @@ export async function onRequestPatch(context) {
               'Authorization': `Bearer ${apiToken}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify(settingsPayload)
+            body: JSON.stringify({ items: settingsPayload })
           }
         );
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          const errorMsg = result.errors && result.errors.length > 0 
+            ? result.errors.map(e => e.message).join(', ')
+            : `HTTP error! status: ${response.status}`;
+          throw new Error(errorMsg);
         }
         
-        const result = await response.json();
-        return { success: result.success, zoneId };
+        return { success: true, zoneId };
       } catch (error) {
         console.error(`Error updating settings for zone ${zoneId}:`, error);
         return { success: false, zoneId, error: error.message };
