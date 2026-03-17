@@ -115,11 +115,8 @@ export async function onRequest(context) {
             } else if (setting.id === 'browser_cache_ttl') {
               // Convert to integer for easier handling
               settings[setting.id] = parseInt(setting.value) || 0;
-            } else if (typeof setting.value === 'string' && (setting.value === 'on' || setting.value === 'off')) {
-              // Convert on/off strings to booleans for toggles
-              settings[setting.id] = setting.value === 'on';
             } else {
-              // Store value as-is
+              // Store value as-is (keep 'on'/'off' as strings)
               settings[setting.id] = setting.value;
             }
           });

@@ -181,8 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const status = zone.status || 'unknown';
             const cachingLevel = formatSettingValue('cache_level', zone.settings?.cache_level);
             const browserCacheTTL = formatBrowserCacheTTL(zone.settings?.browser_cache_ttl);
-            const sslMode = formatSettingValue('ssl', zone.settings?.ssl);
-            const securityLevel = formatSettingValue('security_level', zone.settings?.security_level);
+            const devMode = zone.settings?.development_mode === 'on' ? '✓ On' : 'Off';
+            const minTls = formatSettingValue('min_tls_version', zone.settings?.min_tls_version);
+            const alwaysHttps = zone.settings?.always_use_https === 'on' ? '✓' : '✗';
             
             row.innerHTML = `
                 <td><input type="checkbox" ${isSelected ? 'checked' : ''} data-zone-id="${zone.id}"></td>
@@ -190,8 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><span class="badge badge-${status === 'active' ? 'on' : 'off'}">${status}</span></td>
                 <td>${cachingLevel}</td>
                 <td>${browserCacheTTL}</td>
-                <td>${sslMode}</td>
-                <td>${securityLevel}</td>
+                <td>${devMode}</td>
+                <td>${minTls}</td>
+                <td>${alwaysHttps}</td>
             `;
             
             const checkbox = row.querySelector('input[type="checkbox"]');

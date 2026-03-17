@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overcast - Cloudflare Zone Settings Manager</title>
-    <link rel="stylesheet" href="style.css?v=8">
-    <!-- Version 8.0 - Auto-reload zones after successful updates -->
+    <link rel="stylesheet" href="style.css?v=9">
+    <!-- Version 9.0 - Simplified settings based on Cloudflare API -->
 </head>
 <body>
     <div class="container">
@@ -33,8 +33,9 @@
                             <th>Status</th>
                             <th>Caching</th>
                             <th>Browser TTL</th>
-                            <th>SSL Mode</th>
-                            <th>Security</th>
+                            <th>Dev Mode</th>
+                            <th>Min TLS</th>
+                            <th>HTTPS</th>
                         </tr>
                     </thead>
                     <tbody id="zones-table-body">
@@ -77,14 +78,6 @@
                         </label>
                         <small>Temporarily bypass cache (auto-disables after 3 hours)</small>
                     </div>
-                    <div class="form-group">
-                        <label for="setting-sort_query_string_for_cache">Sort Query String</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="setting-sort_query_string_for_cache" class="setting-input">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <small>Improve cache hit rates by sorting query parameters</small>
-                    </div>
                 </div>
             </div>
 
@@ -93,25 +86,11 @@
                 <h3>🔒 SSL/TLS Settings</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="setting-ssl">SSL/TLS Encryption Mode</label>
-                        <select id="setting-ssl" class="setting-input">
-                            <option value="">-- No Change --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label for="setting-min_tls_version">Minimum TLS Version</label>
                         <select id="setting-min_tls_version" class="setting-input">
                             <option value="">-- No Change --</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="setting-tls_1_3">TLS 1.3</label>
-                        <select id="setting-tls_1_3" class="setting-input">
-                            <option value="">-- No Change --</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
                     <div class="form-group">
                         <label for="setting-always_use_https">Always Use HTTPS</label>
                         <label class="toggle-switch">
@@ -127,14 +106,6 @@
                             <span class="toggle-slider"></span>
                         </label>
                         <small>Rewrite insecure URLs to HTTPS automatically</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="setting-opportunistic_encryption">Opportunistic Encryption</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="setting-opportunistic_encryption" class="setting-input">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <small>Enable encrypted connections for more requests</small>
                     </div>
                 </div>
             </div>
@@ -169,6 +140,6 @@
         <div id="success-alert" class="alert alert-success" style="display: none;"></div>
     </div>
 
-    <script type="module" src="script.js?v=8"></script>
+    <script type="module" src="script.js?v=9"></script>
 </body>
 </html>

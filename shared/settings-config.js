@@ -57,28 +57,8 @@ export const ZONE_SETTINGS = [
     type: 'toggle',
     description: 'Temporarily bypass cache (automatically turns off after 3 hours)'
   },
-  {
-    id: 'sort_query_string_for_cache',
-    label: 'Sort Query String for Cache',
-    category: 'cache',
-    type: 'toggle',
-    description: 'Improve cache hit rates by sorting query parameters'
-  },
   
   // SSL/TLS Settings
-  {
-    id: 'ssl',
-    label: 'SSL/TLS Encryption Mode',
-    category: 'ssl',
-    type: 'select',
-    options: [
-      { value: 'off', label: 'Off' },
-      { value: 'flexible', label: 'Flexible' },
-      { value: 'full', label: 'Full' },
-      { value: 'strict', label: 'Full (Strict)' }
-    ],
-    description: 'Controls how Cloudflare connects to your origin server'
-  },
   {
     id: 'always_use_https',
     label: 'Always Use HTTPS',
@@ -100,30 +80,11 @@ export const ZONE_SETTINGS = [
     description: 'Minimum version of TLS required for connections'
   },
   {
-    id: 'tls_1_3',
-    label: 'TLS 1.3',
-    category: 'ssl',
-    type: 'select',
-    options: [
-      { value: 'on', label: 'Enabled' },
-      { value: 'off', label: 'Disabled' },
-      { value: 'zrt', label: 'Enabled + 0-RTT' }
-    ],
-    description: 'Enable TLS 1.3 for improved performance and security'
-  },
-  {
     id: 'automatic_https_rewrites',
     label: 'Automatic HTTPS Rewrites',
     category: 'ssl',
     type: 'toggle',
     description: 'Automatically rewrite insecure URLs to HTTPS'
-  },
-  {
-    id: 'opportunistic_encryption',
-    label: 'Opportunistic Encryption',
-    category: 'ssl',
-    type: 'toggle',
-    description: 'Enable HTTP/2 Server Push for browsers to request resources over encrypted connection'
   },
   
   // Security Settings
