@@ -30,36 +30,8 @@ export async function onRequestPatch(context) {
       });
     }
     
-    // Prepare settings payload for Cloudflare API
-    // Convert settings object to array format expected by individual zone settings API
-    const settingsPayload = [];
-    
-    for (const [key, value] of Object.entries(settings)) {
-      if (value === undefined || value === null) {
-        continue; // Skip undefined/null values
-      }
-      
-      // Handle different value types
-      let apiValue;
-      
-      if (typeof value === 'boolean') {
-        // Convert boolean to 'on'/'off' string
-        apiValue = value ? 'on' : 'off';
-      } else if (typeof value === 'number') {
-        // Convert numbers to strings
-        apiValue = value.toString();
-      } else if (typeof value === 'object') {
-        // For objects like minify, pass as-is
-        apiValue = value;
-      } else {
-        // Strings and other types pass through
-        apiValue = value;
-      }
-      
-      settingsPayload.push({ id: key, value: apiValue });
-    }
-    
-    if (settingsPayload.length === 0) {
+    // Validate settings object
+    if (!settings || Object.keys(settings).length === 0) {
       return new Response(JSON.stringify({ error: 'No valid settings provided' }), {
         status: 400,
         headers: { 
@@ -69,35 +41,74 @@ export async function onRequestPatch(context) {
       });
     }
     
-    // Update settings for each zone using individual zone settings endpoint
-    // This replaces the deprecated bulk settings endpoint
+    // Update settings for each zone
+    // For each zone, we need to make a separate API call for each setting
+    // API format: PATCH /zones/{zone_id}/settings/{setting_name}
+    // Payload: { value: <value> }
     const updatePromises = zone_ids.map(async zoneId => {
-      try {
-        const response = await fetch(
-          `https://api.cloudflare.com/client/v4/zones/${zoneId}/settings`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${apiToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ items: settingsPayload })
-          }
-        );
-        
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-          const errorMsg = result.errors && result.errors.length > 0 
-            ? result.errors.map(e => e.message).join(', ')
-            : `HTTP error! status: ${response.status}`;
-          throw new Error(errorMsg);
+      const settingResults = [];
+      
+      // Update each setting individually for this zone
+      for (const [settingName, value] of Object.entries(settings)) {
+        if (value === undefined || value === null) {
+          continue; // Skip undefined/null values
         }
         
+        try {
+          // Handle different value types
+          let apiValue;
+          
+          if (typeof value === 'boolean') {
+            // Convert boolean to 'on'/'off' string
+            apiValue = value ? 'on' : 'off';
+          } else if (typeof value === 'number') {
+            // Keep as number for numeric settings
+            apiValue = value;
+          } else if (typeof value === 'object') {
+            // For objects like minify, pass as-is
+            apiValue = value;
+          } else {
+            // Strings and other types pass through
+            apiValue = value;
+          }
+          
+          const response = await fetch(
+            `https://api.cloudflare.com/client/v4/zones/${zoneId}/settings/${settingName}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ value: apiValue })
+            }
+          );
+          
+          const result = await response.json();
+          
+          if (!response.ok || !result.success) {
+            const errorMsg = result.errors && result.errors.length > 0 
+              ? result.errors.map(e => e.message).join(', ')
+              : `HTTP error! status: ${response.status}`;
+            settingResults.push({ setting: settingName, success: false, error: errorMsg });
+          } else {
+            settingResults.push({ setting: settingName, success: true });
+          }
+        } catch (error) {
+          console.error(`Error updating setting ${settingName} for zone ${zoneId}:`, error);
+          settingResults.push({ setting: settingName, success: false, error: error.message });
+        }
+      }
+      
+      // Check if all settings updated successfully
+      const allSuccess = settingResults.every(r => r.success);
+      const failedSettings = settingResults.filter(r => !r.success);
+      
+      if (allSuccess) {
         return { success: true, zoneId };
-      } catch (error) {
-        console.error(`Error updating settings for zone ${zoneId}:`, error);
-        return { success: false, zoneId, error: error.message };
+      } else {
+        const errorMsg = failedSettings.map(s => `${s.setting}: ${s.error}`).join('; ');
+        return { success: false, zoneId, error: errorMsg };
       }
     });
     
