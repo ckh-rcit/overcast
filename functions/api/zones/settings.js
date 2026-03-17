@@ -80,7 +80,7 @@ export async function onRequestPatch(context) {
               'Authorization': `Bearer ${apiToken}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ items: settingsPayload })
+            body: JSON.stringify(settingsPayload)
           }
         );
         
