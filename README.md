@@ -5,16 +5,15 @@ Overcast is a tool for easily managing Cloudflare configurations across multiple
 ## Features
 
 - **Comprehensive Zone Management**: List all zones in your Cloudflare account with pagination
-- **Extensive Settings Support**: Manage 40+ zone settings organized by category:
-  - **Cache Settings**: Caching level, browser cache TTL, development mode, query string sorting
-  - **SSL/TLS Settings**: Encryption mode, TLS versions, Always Use HTTPS, automatic HTTPS rewrites
-  - **Security Settings**: Security level, challenge TTL, browser integrity check, WAF
-  - **Network Settings**: HTTP/2, HTTP/3, IPv6, WebSockets, IP geolocation
-  - **Speed & Optimization**: Brotli, early hints, Rocket Loader, Polish, WebP, minification
-  - **Scrape Shield**: Email obfuscation, hotlink protection, server-side excludes
-- **Batch Operations**: Apply settings to multiple zones simultaneously
-- **Modern UI**: Cloudflare-inspired dark theme with intuitive controls
-- **Secure API Handling**: All API tokens stored in environment secrets, never exposed to browser
+- **Essential Settings Support**: Manage critical zone settings organized by category:
+  - **Cache Settings**: Caching level, browser cache TTL, development mode
+  - **SSL/TLS Settings**: Always Use HTTPS, minimum TLS version, automatic HTTPS rewrites
+- **Batch Operations**: Apply settings to multiple zones simultaneously with detailed progress tracking
+- **Real-time Progress Indicator**: Visual feedback showing success/failure for each zone with detailed error messages
+- **Auto-refresh**: Zone list automatically updates after successful changes to show new values
+- **Modern UI**: Pure black Vercel-inspired theme (#000000) with intuitive controls
+- **Secure API Handling**: All API tokens stored server-side in environment secrets, never exposed to browser
+- **Individual Setting Endpoints**: Uses modern Cloudflare API endpoints for reliable updates
 - **Fully Cloudflare-Native**: Deployed on Cloudflare Pages with Pages Functions backend
 
 ## Architecture
@@ -23,8 +22,14 @@ This application is a full-stack Cloudflare Pages application:
 
 1. **Frontend**: Static HTML/CSS/JS served by Cloudflare Pages (root directory)
 2. **Backend**: Cloudflare Pages Functions that handle API calls (`/functions/api`)
+   - `/api/config` - Check server configuration (Account ID requirement)
    - `/api/zones` - Lists zones and their settings
-   - `/api/zones/settings` - Updates zone settings
+   - `/api/zones/settings` - Updates zone settings using individual setting endpoints
+
+The application uses individual Cloudflare API endpoints for each setting:
+- Format: `PATCH /zones/{zone_id}/settings/{setting_name}`
+- Payload: `{ value: <value> }`
+- This ensures compatibility with the latest Cloudflare API standards
 
 The API token is stored securely in environment variables and never exposed to the browser.
 
@@ -82,21 +87,24 @@ This method automatically deploys your application whenever you push to GitHub.
    - **Build output directory**: `/` (root directory)
    - Click **Save and Deploy**
 
-4. **Add environment variable:**
+4. **Add environment variables (REQUIRED):**
    - After the first deployment, go to **Settings** → **Environment variables**
    - Click **Add variable**
+   
+   **Add API Token:**
    - **Variable name**: `CLOUDFLARE_API_TOKEN`
    - **Value**: Your Cloudflare API Token
    - **Environment**: Production (and optionally Preview)
    - **Type**: Encrypt (select the lock icon)
    - Click **Save**
    
-   **Optional:** You can also configure the Account ID as an environment variable:
+   **Add Account ID (REQUIRED):**
+   - Click **Add variable**
    - **Variable name**: `CLOUDFLARE_ACCOUNT_ID`
    - **Value**: Your Cloudflare Account ID (32-character hex string)
    - **Environment**: Production (and optionally Preview)
+   - **Type**: Encrypt (select the lock icon)
    - Click **Save**
-   - When configured, users won't need to enter the Account ID manually
 
 5. **Redeploy:**
    - Go to **Deployments** tab
@@ -125,17 +133,16 @@ This method automatically deploys your application whenever you push to GitHub.
    bunx wrangler pages project create overcast
    ```
 
-4. **Set up the API token secret:**
+4. **Set up environment secrets (REQUIRED):**
    ```bash
    bunx wrangler pages secret put CLOUDFLARE_API_TOKEN --project-name overcast
    ```
    When prompted, paste your Cloudflare API Token.
    
-   **Optional:** Configure the Account ID as a secret:
    ```bash
    bunx wrangler pages secret put CLOUDFLARE_ACCOUNT_ID --project-name overcast
    ```
-   When prompted, paste your Cloudflare Account ID. This allows users to skip entering it manually.
+   When prompted, paste your Cloudflare Account ID (required for the application to work).
 
 5. **Deploy to Cloudflare Pages:**
    ```bash
@@ -163,20 +170,22 @@ This method automatically deploys your application whenever you push to GitHub.
    - **Build command**: (leave empty - no build needed)
    - **Build output directory**: `/` (root directory)
 
-3. **Add environment variable:**
+3. **Add environment variables (REQUIRED):**
    - After the first deployment, go to **Settings** → **Environment variables**
-   - Add a variable:
-     - **Variable name**: `CLOUDFLARE_API_TOKEN`
-     - **Value**: Your Cloudflare API Token
-     - **Type**: Secret (encrypted)
+   
+   **Add API Token:**
+   - Click **Add variable**
+   - **Variable name**: `CLOUDFLARE_API_TOKEN`
+   - **Value**: Your Cloudflare API Token
+   - **Type**: Secret (encrypted)
    - Click **Save**
    
-   **Optional:** Add Account ID as an environment variable:
+   **Add Account ID (REQUIRED):**
+   - Click **Add variable**
    - **Variable name**: `CLOUDFLARE_ACCOUNT_ID`
    - **Value**: Your Cloudflare Account ID
    - **Type**: Secret (encrypted)
    - Click **Save**
-   - When configured, users won't need to enter it manually
 
 4. **Redeploy:**
    - Go to **Deployments** and click **Retry deployment** for the latest deployment
@@ -211,69 +220,52 @@ Deployment typically takes 1-2 minutes. You'll get a unique URL for each deploym
 
 1. **Access your application** at your Overcast URL (e.g., `https://overcast.pages.dev`)
 
-2. **Enter your Cloudflare Account ID** (if not configured server-side)
-   - Find this in your Cloudflare dashboard under Account Settings
-   - Or in the URL when viewing your account: `dash.cloudflare.com/<ACCOUNT_ID>`
-   - If the Account ID is configured as an environment variable, this field will be pre-filled and disabled
-
-3. **Load your zones**
+2. **Load your zones**
    - Click "Load Zones" to fetch all zones in your account
    - Adjust "Zones per page" if you have many zones
+   - The Account ID is configured server-side for security
+
+3. **View zone settings**
+   - The table displays current settings for each zone:
+     - **Status**: Active or inactive
+     - **Caching**: Current cache level (Standard, No Query String, Ignore Query String)
+     - **Browser TTL**: Browser cache TTL setting
+     - **Dev Mode**: Development mode status (On/Off)
+     - **Min TLS**: Minimum TLS version (1.0, 1.1, 1.2, 1.3)
+     - **HTTPS**: Always Use HTTPS status (✓/✗)
 
 4. **Select zones to update**
    - Use checkboxes to select individual zones
    - Or click "Select All" to select all zones on the current page
    - Selected count is displayed at the bottom
 
-5. **Configure settings by category**
+5. **Configure settings**
    
    **Cache Settings:**
-   - Caching Level: Controls how Cloudflare caches content
-   - Browser Cache TTL: How long browsers cache resources
-   - Development Mode: Temporarily bypass cache
-   - Sort Query Strings: Improve cache hit rates
+   - **Caching Level**: Controls how Cloudflare caches content
+     - Standard: Cache all static content
+     - No Query String: Ignore query strings when caching
+     - Ignore Query String: Treat URLs with query strings as the same file
+   - **Browser Cache TTL**: How long browsers cache resources (0 = Respect Existing Headers, or specific time periods)
+   - **Development Mode**: Temporarily bypass cache (automatically turns off after 3 hours)
    
    **SSL/TLS Settings:**
-   - SSL Mode: Off, Flexible, Full, or Full (Strict)
-   - TLS Versions: Minimum TLS version and TLS 1.3 settings
-   - Always Use HTTPS: Redirect HTTP to HTTPS
-   - Automatic HTTPS Rewrites: Fix mixed content warnings
-   
-   **Security Settings:**
-   - Security Level: Threat sensitivity (Off to Under Attack)
-   - Challenge TTL: How long visitors stay verified
-   - Browser Integrity Check: Evaluate headers for threats
-   - WAF: Web Application Firewall
-   
-   **Network Settings:**
-   - HTTP/2 & HTTP/3: Enable modern protocols
-   - IPv6: Enable IPv6 support
-   - WebSockets: Allow WebSocket connections
-   - IP Geolocation: Add country code header
-   
-   **Speed & Optimization:**
-   - Brotli: Better compression for HTTPS
-   - Rocket Loader: Defer JavaScript loading
-   - Polish: Automatic image optimization
-   - WebP: Serve modern image format
-   - Mirage: Optimize for mobile
-   
-   **Scrape Shield:**
-   - Email Obfuscation: Hide emails from bots
-   - Hotlink Protection: Prevent image theft
-   - Server Side Excludes: Block content from bots
+   - **Always Use HTTPS**: Redirect all HTTP requests to HTTPS
+   - **Minimum TLS Version**: Set minimum TLS version (1.0, 1.1, 1.2, or 1.3)
+   - **Automatic HTTPS Rewrites**: Automatically rewrite insecure URLs to HTTPS
 
 6. **Apply settings**
    - Only changed settings will be applied (leave dropdown as "-- No Change --" to skip)
-   - Toggle switches only apply when checked (for enabling features)
+   - Toggle switches only apply when checked
    - Click "Apply Settings to Selected Zones"
-   - Confirm the action in the dialog
-   - Wait for success confirmation
+   - Watch the progress indicator showing real-time updates for each zone
+   - Zones automatically reload after 1 second to show updated values
 
 7. **View results**
-   - Success message shows how many zones were updated
-   - Zone list refreshes automatically to show new settings
-   - Any errors are displayed with details
+   - Progress indicator shows success (✓) or failure (✗) for each zone
+   - Detailed error messages are displayed for any failures
+   - Click "Dismiss" to close the progress indicator
+   - The zone table refreshes automatically to display updated settings
 
 ## Development
 
@@ -284,12 +276,14 @@ To run this locally for development:
    bun install
    ```
 
-2. **Set up local environment variable:**
+2. **Set up local environment variables:**
    Create a `.dev.vars` file in the root directory:
    ```
    CLOUDFLARE_API_TOKEN=your_token_here
-   CLOUDFLARE_ACCOUNT_ID=your_account_id_here  # Optional
+   CLOUDFLARE_ACCOUNT_ID=your_account_id_here
    ```
+   
+   **Note:** Both variables are required for the application to work.
 
 3. **Run the development server:**
    ```bash
@@ -307,27 +301,36 @@ The development server will automatically reload when you make changes to your f
 
 ## Security Notes
 
-- Your Cloudflare API Token is stored only in environment variables, never exposed in the frontend
-- The Pages Functions act as a secure backend, adding your token to requests before forwarding to Cloudflare API
+- Your Cloudflare API Token is stored only in server-side environment variables, never exposed in the frontend
+- Account ID is required server-side, preventing unauthorized access to zone management
+- The Pages Functions act as a secure backend, adding credentials to requests before forwarding to Cloudflare API
 - All communication is over HTTPS
 - The API validates all inputs before making API calls
+- Individual setting endpoints are used to ensure precise updates and better error handling
 
 ## Environment Variables
 
 This application uses the following environment variables:
 
-### Required
+### Required Environment Variable
+
 - **`CLOUDFLARE_API_TOKEN`**: Your Cloudflare API token with zone and zone settings permissions
   - Type: Secret (encrypted)
   - Required for all API operations
   - Never exposed to the frontend
+  
+**Required Permissions:**
+- Zone → Zone → Read
+- Zone → Zone Settings → Read  
+- Zone → Zone Settings → Write
 
-### Optional
+### Required Server-Side Configuration
+
 - **`CLOUDFLARE_ACCOUNT_ID`**: Your Cloudflare Account ID (32-character hex string)
   - Type: Secret (encrypted)
-  - When configured: Users are automatically authenticated and don't need to enter Account ID
-  - When not configured: Users must enter their Account ID in the UI
-  - Useful for single-tenant deployments or internal tools
+  - **REQUIRED** - Must be configured server-side
+  - Users cannot access the application without this configured
+  - This is a security measure to prevent unauthorized access
 
 To set these in production:
 1. Go to your Pages project → **Settings** → **Environment variables**
