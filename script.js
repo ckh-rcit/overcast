@@ -12,6 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedCountEl = document.getElementById('selected-count');
     const zonesCountEl = document.getElementById('zones-count');
     const loadingIndicator = document.getElementById('loading-indicator');
+    const progressIndicator = document.getElementById('progress-indicator');
+    const progressBar = document.getElementById('progress-bar');
+    const progressCount = document.getElementById('progress-count');
+    const progressPercentage = document.getElementById('progress-percentage');
+    const progressSummary = document.getElementById('progress-summary');
+    const progressDetails = document.getElementById('progress-details');
     const errorAlert = document.getElementById('error-alert');
     const successAlert = document.getElementById('success-alert');
 
@@ -472,12 +478,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        showLoading();
+        // Show progress indicator
+        showProgress();
         applySettingsBtn.disabled = true;
         
+        // Get zone names for display
+        const zoneIds = Array.from(selectedZones);
+        const zoneMap = new Map();
+        allZones.forEach(zone => {
+            if (zoneIds.includes(zone.id)) {
+                zoneMap.set(zone.id, zone.name);
+            }
+        });
+        
+        // Initialize progress
+        updateProgress(0, zoneIds.length, 'Preparing to apply settings...');
+        progressDetails.innerHTML = '';
+        
         try {
-            const zoneIds = Array.from(selectedZones);
-            
             const response = await fetch(`${apiBaseUrl}/zones/settings`, {
                 method: 'PATCH',
                 headers: {
@@ -499,24 +517,78 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
 
-            showSuccess(`✓ Successfully applied ${settingsCount} setting(s) to ${data.updated_count} of ${selectedZones.size} zone(s)`);
+            // Update progress to 100%
+            updateProgress(zoneIds.length, zoneIds.length, 'Processing complete!');
+            
+            // Display detailed results
+            if (data.results && data.results.length > 0) {
+                progressDetails.innerHTML = '';
+                data.results.forEach(result => {
+                    const zoneName = zoneMap.get(result.zoneId) || result.zoneId;
+                    addProgressItem(zoneName, result.success, result.error);
+                });
+            }
+
+            const successCount = data.updated_count || 0;
+            const failCount = zoneIds.length - successCount;
+            
+            if (failCount === 0) {
+                showSuccess(`✓ Successfully applied ${settingsCount} setting(s) to all ${successCount} zone(s)`);
+            } else {
+                showSuccess(`✓ Applied ${settingsCount} setting(s) to ${successCount} zone(s). ${failCount} failed.`);
+            }
             
             // Clear form inputs after successful application
             resetSettingsForm();
             
             // Refresh zone data to show updated settings
             setTimeout(() => {
+                hideProgress();
                 showLoading();
-                fetchZones();
-            }, 1500);
+                fetchAllZones();
+            }, 3000);
             
         } catch (error) {
+            hideProgress();
             showError(`Failed to apply settings: ${error.message}`);
             console.error('Error applying settings:', error);
         } finally {
-            hideLoading();
             applySettingsBtn.disabled = false;
         }
+    }
+
+    function showProgress() {
+        progressIndicator.style.display = 'block';
+        errorAlert.style.display = 'none';
+        successAlert.style.display = 'none';
+    }
+
+    function hideProgress() {
+        progressIndicator.style.display = 'none';
+    }
+
+    function updateProgress(current, total, message) {
+        const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+        progressBar.style.width = `${percentage}%`;
+        progressCount.textContent = `${current} / ${total}`;
+        progressPercentage.textContent = `${percentage}%`;
+        progressSummary.textContent = message;
+    }
+
+    function addProgressItem(zoneName, success, errorMsg) {
+        const item = document.createElement('div');
+        item.className = `progress-item ${success ? 'success' : 'error'}`;
+        
+        const icon = success ? '✓' : '✗';
+        const status = success ? 'Updated' : `Failed: ${errorMsg || 'Unknown error'}`;
+        
+        item.innerHTML = `
+            <span class="progress-item-icon">${icon}</span>
+            <span class="progress-item-name">${zoneName}</span>
+            <span class="progress-item-status">${status}</span>
+        `;
+        
+        progressDetails.appendChild(item);
     }
 
     function resetSettingsForm() {

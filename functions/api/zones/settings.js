@@ -6,10 +6,10 @@ export async function onRequestPatch(context) {
   
   try {
     const data = await request.json();
-    const { account_id, zone_ids, settings } = data;
+    const { zone_ids, settings } = data;
     
-    if (!account_id || !zone_ids || !zone_ids.length) {
-      return new Response(JSON.stringify({ error: 'Account ID and zone IDs are required' }), {
+    if (!zone_ids || !zone_ids.length) {
+      return new Response(JSON.stringify({ error: 'Zone IDs are required' }), {
         status: 400,
         headers: { 
           'Content-Type': 'application/json',
