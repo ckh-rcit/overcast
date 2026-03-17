@@ -2,6 +2,38 @@
 
 Overcast is a tool for easily managing Cloudflare configurations across multiple zones in your account. Built with Cloudflare Pages for the frontend and Pages Functions for the secure API backend.
 
+## ⚠️ Security Warning
+
+**DO NOT deploy this application publicly without proper authentication!**
+
+This application provides powerful zone management capabilities and should **ONLY** be accessible to authorized administrators. We strongly recommend:
+
+### Recommended: Cloudflare Zero Trust Access
+
+Protect your deployment using [Cloudflare Access](https://www.cloudflare.com/products/zero-trust/access/):
+
+1. Go to **Zero Trust** → **Access** → **Applications**
+2. Click **Add an application** → **Self-hosted**
+3. Configure:
+   - **Application name**: Overcast Zone Manager
+   - **Session Duration**: As needed (e.g., 24 hours)
+   - **Application domain**: `overcast.pages.dev` (or your custom domain)
+4. Add an **Access Policy**:
+   - **Policy name**: Administrators Only
+   - **Action**: Allow
+   - **Include**: Add rules for your team (e.g., Emails, Email domains, or Groups)
+5. Save and deploy
+
+This ensures only authenticated users from your organization can access the application.
+
+### Alternative Options:
+
+- **IP Restrictions**: Use Cloudflare WAF rules to allow only specific IP addresses
+- **Cloudflare Tunnel**: Deploy behind a private tunnel with authentication
+- **Custom Authentication**: Implement your own auth layer in Pages Functions
+
+**Without protection, anyone who discovers your URL could potentially manage your Cloudflare zones.**
+
 ## Features
 
 - **Comprehensive Zone Management**: List all zones in your Cloudflare account with pagination
@@ -111,8 +143,20 @@ This method automatically deploys your application whenever you push to GitHub.
    - Click **Retry deployment** on the latest deployment
    - Or simply push a new commit to trigger automatic deployment
 
-6. **Access your application:**
-   Your application will be available at `https://overcast.pages.dev`
+6. **🔒 CRITICAL: Set up Cloudflare Access (Security)**
+   
+   **Before accessing your application**, protect it with authentication:
+   
+   - Go to **Zero Trust** → **Access** → **Applications**
+   - Click **Add an application** → **Self-hosted**
+   - Set **Application domain** to your Pages URL (e.g., `overcast.pages.dev`)
+   - Add an **Access Policy** allowing only your team
+   - Save and deploy
+   
+   See the [Security Warning](#️-security-warning) section above for detailed instructions.
+
+7. **Access your application:**
+   Your application will be available at `https://overcast.pages.dev` (after setting up Access)
 
 **Future deployments:** From now on, every push to the `main` branch will automatically deploy to production!
 
@@ -153,7 +197,10 @@ This method automatically deploys your application whenever you push to GitHub.
    bunx wrangler pages deploy . --project-name overcast
    ```
 
-6. **Access your application:**
+6. **🔒 Set up Cloudflare Access (Security):**
+   Before accessing your application, protect it with authentication. See the [Security Warning](#️-security-warning) section for detailed setup instructions.
+
+7. **Access your application:**
    Your application will be available at `https://overcast.pages.dev`
    (or your custom domain if configured)
 
@@ -190,6 +237,9 @@ This method automatically deploys your application whenever you push to GitHub.
 4. **Redeploy:**
    - Go to **Deployments** and click **Retry deployment** for the latest deployment
    - Or push a new commit to trigger a new deployment
+
+5. **🔒 Set up Cloudflare Access (Security):**
+   Before accessing your application, protect it with authentication. See the [Security Warning](#️-security-warning) section for detailed setup instructions.
 
 ### Custom Domain (Optional)
 
@@ -301,12 +351,25 @@ The development server will automatically reload when you make changes to your f
 
 ## Security Notes
 
+**⚠️ CRITICAL: This application MUST be protected with authentication before production use!**
+
+- **Use Cloudflare Access**: Protect your deployment with Zero Trust Access (recommended)
+- **Never deploy publicly**: Without authentication, anyone can manage your Cloudflare zones
+- **Production deployment example**: We protect our instance at `https://overcast.rivcoit.com` using Cloudflare Access with team authentication
+
+**Additional security measures:**
 - Your Cloudflare API Token is stored only in server-side environment variables, never exposed in the frontend
 - Account ID is required server-side, preventing unauthorized access to zone management
 - The Pages Functions act as a secure backend, adding credentials to requests before forwarding to Cloudflare API
 - All communication is over HTTPS
 - The API validates all inputs before making API calls
 - Individual setting endpoints are used to ensure precise updates and better error handling
+
+**Recommended Access Configuration:**
+- Policy: Allow only specific email addresses or email domains
+- Session Duration: 8-24 hours (balance security and convenience)
+- Require MFA: Enable multi-factor authentication for added security
+- Audit Logs: Monitor who accesses the application via Zero Trust logs
 
 ## Environment Variables
 
