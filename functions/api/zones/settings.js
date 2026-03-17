@@ -72,6 +72,8 @@ export async function onRequestPatch(context) {
             apiValue = value;
           }
           
+          console.log(`Updating ${settingName} for zone ${zoneId} with value:`, apiValue);
+          
           const response = await fetch(
             `https://api.cloudflare.com/client/v4/zones/${zoneId}/settings/${settingName}`,
             {
@@ -83,6 +85,13 @@ export async function onRequestPatch(context) {
               body: JSON.stringify({ value: apiValue })
             }
           );
+          
+          // Check if response is JSON before parsing
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            const textResponse = await response.text();
+            throw new Error(`Non-JSON response (${response.status}): ${textResponse.substring(0, 200)}`);
+          }
           
           const result = await response.json();
           
