@@ -31,7 +31,7 @@ export async function onRequestPatch(context) {
     }
     
     // Prepare settings payload for Cloudflare API
-    // Convert settings object to array format expected by Cloudflare API
+    // Convert settings object to array format expected by individual zone settings API
     const settingsPayload = [];
     
     for (const [key, value] of Object.entries(settings)) {
@@ -69,7 +69,8 @@ export async function onRequestPatch(context) {
       });
     }
     
-    // Update settings for each zone
+    // Update settings for each zone using individual zone settings endpoint
+    // This replaces the deprecated bulk settings endpoint
     const updatePromises = zone_ids.map(async zoneId => {
       try {
         const response = await fetch(
@@ -80,7 +81,7 @@ export async function onRequestPatch(context) {
               'Authorization': `Bearer ${apiToken}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify(settingsPayload)
+            body: JSON.stringify({ items: settingsPayload })
           }
         );
         
