@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Format values for display
             const status = zone.status || 'unknown';
-            const cachingLevel = formatSettingValue('caching_level', zone.settings?.caching_level);
+            const cachingLevel = formatSettingValue('cache_level', zone.settings?.cache_level);
             const browserCacheTTL = formatBrowserCacheTTL(zone.settings?.browser_cache_ttl);
             const sslMode = formatSettingValue('ssl', zone.settings?.ssl);
             const securityLevel = formatSettingValue('security_level', zone.settings?.security_level);

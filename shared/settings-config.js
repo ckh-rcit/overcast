@@ -4,7 +4,7 @@
 export const ZONE_SETTINGS = [
   // Cache Settings
   {
-    id: 'caching_level',
+    id: 'cache_level',
     label: 'Caching Level',
     category: 'cache',
     type: 'select',
