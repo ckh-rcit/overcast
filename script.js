@@ -556,8 +556,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clear form inputs after successful application
             resetSettingsForm();
             
-            // Show dismiss button instead of auto-hiding
+            // Show dismiss button
             progressActions.style.display = 'flex';
+            
+            // Reload zones automatically if any updates were successful
+            if (successCount > 0) {
+                setTimeout(() => {
+                    showLoading();
+                    fetchAllZones();
+                }, 1000); // Small delay to let user see the success message
+            }
             
         } catch (error) {
             hideProgress();
