@@ -11,6 +11,7 @@
 </script>
 
 <svelte:head>
+	<link rel="icon" type="image/png" href="/favicon.png" />
 	<title>OVERCAST — Zone Settings</title>
 	<meta
 		name="description"
