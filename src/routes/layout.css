@@ -331,6 +331,10 @@ th {
 	background: #fff;
 }
 
+.toggle.dirty .toggle-track {
+	box-shadow: 0 0 0 2px oklch(0.72 0.17 55 / 0.6);
+}
+
 .category-heading {
 	font-size: 0.82rem;
 	font-weight: 700;

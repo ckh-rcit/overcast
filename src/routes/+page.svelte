@@ -318,9 +318,9 @@
 						</th>
 						<th>Zone</th>
 						<th>Status</th>
+						<th>SSL Mode</th>
 						<th>Caching</th>
 						<th>Browser TTL</th>
-						<th>Dev Mode</th>
 						<th>Min TLS</th>
 						<th>HTTPS</th>
 					</tr>
@@ -342,11 +342,9 @@
 									{zone.status}
 								</span>
 							</td>
+							<td>{formatSettingDisplay('ssl', zone.settings?.ssl)}</td>
 							<td>{formatSettingDisplay('cache_level', zone.settings?.cache_level)}</td>
 							<td>{formatBrowserTTL(zone.settings?.browser_cache_ttl)}</td>
-							<td>
-								{zone.settings?.development_mode === 'on' ? '✓ On' : 'Off'}
-							</td>
 							<td>{formatSettingDisplay('min_tls_version', zone.settings?.min_tls_version)}</td>
 							<td>
 								{zone.settings?.always_use_https === 'on' ? '✓' : '✗'}
@@ -426,7 +424,7 @@
 										{/each}
 									</select>
 								{:else if cfg.type === 'toggle'}
-									<label class="toggle">
+									<label class="toggle {dirtySettings.has(cfg.id) ? 'dirty' : ''}">
 										<input
 											type="checkbox"
 											checked={settingValues[cfg.id] === true}

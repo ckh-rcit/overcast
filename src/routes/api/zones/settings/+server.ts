@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { patchZoneSetting } from '$lib/cloudflare';
+import { getSettingById } from '$lib/settings';
 
 export async function PATCH({ request }: { request: Request }) {
 	try {
@@ -15,6 +16,11 @@ export async function PATCH({ request }: { request: Request }) {
 
 		if (!settings || Object.keys(settings).length === 0) {
 			return json({ error: 'No settings provided' }, { status: 400 });
+		}
+
+		const invalidKeys = Object.keys(settings).filter((k) => !getSettingById(k));
+		if (invalidKeys.length > 0) {
+			return json({ error: `Unknown setting(s): ${invalidKeys.join(', ')}` }, { status: 400 });
 		}
 
 		const results = await Promise.all(
